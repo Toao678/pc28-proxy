@@ -9,8 +9,9 @@
 html, body { min-height:100vh; font-family:-apple-system,'Inter','SF Pro Display','PingFang SC',sans-serif; background:#f0f2f5; color:#1e293b; padding:8px; font-size:13px; line-height:1.6; }
 h1 { text-align:center; font-size:17px; color:#1a3a5c; margin-bottom:8px; }
 h2 { font-size:14px; color:#c0392b; margin:6px 0 4px; border-bottom:1px solid #dde3ec; padding-bottom:3px; }
+h3 { font-size:12px; color:#2980b9; margin:4px 0 2px; }
 .panel { background:#ffffff; border:1px solid #dde3ec; border-radius:10px; padding:10px; margin-bottom:10px; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
-.row { display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px; }
+.row { display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px; padding:1px 0; }
 .row span { color:#5a6f8a; }
 .row strong { color:#1a1a1a; word-break:break-all; text-align:right; }
 .tag { display:inline-block; padding:2px 8px; border-radius:4px; font-weight:bold; font-size:12px; color:#fff; }
@@ -22,6 +23,7 @@ h2 { font-size:14px; color:#c0392b; margin:6px 0 4px; border-bottom:1px solid #d
 .tag-buy { background:#27ae60; }
 .tag-pred { background:#e67e22; }
 .tag-nopred { background:#95a5a6; }
+.tag-process { background:#5b6abf; }
 table { width:100%; border-collapse:collapse; margin-top:6px; font-size:12px; }
 th, td { padding:4px 6px; text-align:center; border:1px solid #dde3ec; }
 th { background:#eef2f7; color:#1a3a5c; }
@@ -37,7 +39,119 @@ th { background:#eef2f7; color:#1a3a5c; }
 .win-item { border:1px solid #dde3ec; border-radius:4px; padding:1px 6px; background:#f8f9fb; font-size:11px; color:#2c3e50; font-weight:bold; min-width:48px; text-align:center; }
 .scroll-wrap { overflow-x:auto; }
 .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-@media (max-width:600px){ .grid2{grid-template-columns:1fr;} }
+
+/* ===== 毛玻璃计算过程 ===== */
+.process-glass {
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.40);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin: 4px 0 8px 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.process-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(200,210,220,0.25);
+}
+.process-step:last-child { border-bottom: none; }
+.step-number {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+}
+.step-content {
+    flex: 1;
+    min-width: 0;
+}
+.step-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1a3a5c;
+    margin-bottom: 2px;
+}
+.step-detail {
+    font-size: 11px;
+    color: #3a4a6a;
+    line-height: 1.5;
+}
+.step-detail .hl { color: #c0392b; font-weight:700; }
+.step-detail .hl-blue { color: #2980b9; font-weight:700; }
+.step-detail .hl-green { color: #27ae60; font-weight:700; }
+.step-detail .hl-purple { color: #8e44ad; font-weight:700; }
+.step-detail .val { font-weight:700; color:#1a3a5c; }
+.process-tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    margin-right: 4px;
+}
+.process-tag.purple { background: #8e44ad; }
+.process-tag.blue { background: #2980b9; }
+.process-tag.green { background: #27ae60; }
+.process-tag.orange { background: #e67e22; }
+.process-tag.red { background: #c0392b; }
+.process-tag.gray { background: #7f8c8d; }
+
+.process-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    gap: 4px;
+    margin: 4px 0;
+}
+.process-grid .item {
+    background: rgba(255,255,255,0.70);
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-size: 10px;
+    border: 1px solid rgba(200,210,220,0.30);
+    text-align: center;
+}
+.process-grid .item .label { color:#5a6f8a; font-size:9px; }
+.process-grid .item .val { font-weight:700; color:#1a3a5c; font-size:11px; }
+.process-grid .item .sub { font-size:9px; color:#7f8c8d; }
+
+.process-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px 8px;
+    padding: 2px 0;
+}
+.process-inline .item {
+    background: rgba(255,255,255,0.60);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 10px;
+    border: 1px solid rgba(200,210,220,0.20);
+}
+
+.process-sub-glass {
+    background: rgba(255,255,255,0.35);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.30);
+    border-radius: 8px;
+    padding: 6px 10px;
+    margin: 4px 0;
+}
+
+@media (max-width:600px){ .grid2{grid-template-columns:1fr;} .process-grid{grid-template-columns:1fr 1fr 1fr;} }
 </style>
 </head>
 <body>
@@ -59,6 +173,22 @@ th { background:#eef2f7; color:#1a3a5c; }
 <div class="row"><span>四组合评分:</span><strong id="combo-scores">--</strong></div>
 <div class="row"><span>杀组:</span><strong id="kill-group" class="tag tag-kill">--</strong></div>
 <div class="row"><span>买入候选:</span><strong id="buy-groups" class="tag tag-buy">--</strong></div>
+</div>
+
+<!-- ====== 模型A计算过程 ====== -->
+<div class="panel" id="panel-process-a">
+<h2>🧮 模型A · 计算过程</h2>
+<div id="process-a-content">
+  <div class="process-glass"><div class="step-content"><span style="color:#5a6f8a;">⏳ 等待数据...</span></div></div>
+</div>
+</div>
+
+<!-- ====== 模型B计算过程 ====== -->
+<div class="panel" id="panel-process-b">
+<h2>🧮 模型B · 计算过程</h2>
+<div id="process-b-content">
+  <div class="process-glass"><div class="step-content"><span style="color:#5a6f8a;">⏳ 等待数据(需≥50期)...</span></div></div>
+</div>
 </div>
 
 <!-- 统计面板 -->
@@ -221,25 +351,30 @@ function modelAWindow(h,w) {
     }
     score = Math.max(0, Math.min(1, score));
     const rel = Math.min(r.length / w, 1) * 0.6 + Math.min(Math.abs(p - 0.5) * 2, 0.5) * 0.4;
-    return {score, pBig: p, reliability: rel};
+    return {score, pBig: p, reliability: rel, p_big:p, trend_signal:trend, streak_signal:streakSig, current_streak:cs, reversal_adj:(cs>=A_REVERSAL_STREAK&&cs<6)?(lb?-0.03:0.03):0, sample_count:r.length};
 }
 
 function predictA(h) {
     const res = {};
     A_WINDOWS.forEach(w => res[w] = modelAWindow(h,w));
     let ws = 0, tw = 0;
+    const effs = {};
     A_WINDOWS.forEach(w => {
         const eff = A_DEFAULT_WINDOW_WEIGHTS[w] * Math.max(res[w].reliability, A_RELIABILITY_FLOOR);
+        effs[w] = eff;
         ws += eff * res[w].score;
         tw += eff;
     });
     const fs = tw > 0 ? ws / tw : 0.5;
-    return {
+    const result = {
         prediction: fs >= 0.5 ? "大" : "小",
         weightedProbability: {"大": fs, "小": 1 - fs},
         type: judgeType(h),
-        windows: res
+        windows: res,
+        effs: effs,
+        final_score: fs
     };
+    return result;
 }
 
 // ============================================================
@@ -248,9 +383,12 @@ function predictA(h) {
 function seedBacktest(h, seed) {
     if(h.length < 50) return {error: 1};
     const hits = [];
+    const details = [];
     for(let i = 50; i < h.length; i++) {
         const g = getBPrediction(seed, {nbr: h[i-1].nbr, sum: h[i-1].sum, type: h[i-1].type});
-        hits.push(g.includes(h[i].type) ? 1 : 0);
+        const hit = g.includes(h[i].type) ? 1 : 0;
+        hits.push(hit);
+        details.push({target: h[i].nbr, groups: g.join(','), hit: hit});
     }
     const total = hits.length;
     if(!total) return {error: 1};
@@ -269,26 +407,45 @@ function seedBacktest(h, seed) {
     hits.forEach(x => { if(!x){ c++; m = Math.max(m,c); } else c = 0; });
     const lossPen = Math.max(0, 1 - m / total);
     const score = overall * 0.4 + rr * 0.3 + stability * 0.2 + lossPen * 0.1;
-    return {overall, recentRate: rr, stability, score, hits};
+    return {overall, recentRate: rr, stability, score, hits, details, max_loss:m, lossPen:lossPen};
 }
 
 function selectSeed(h) {
     if(h.length < 50) return {error: 1};
     let bs = -1, bseed = null, bd = null;
+    const coarseSeeds = [];
     for(let s = B_SEED_MIN; s <= B_SEED_MAX; s += B_COARSE_STEP) {
+        coarseSeeds.push(s);
+    }
+    let coarseResult = [];
+    for(let idx=0; idx<coarseSeeds.length; idx++) {
+        const s = coarseSeeds[idx];
         const d = seedBacktest(h, s);
         if(d.error) continue;
         if(d.score > bs) { bs = d.score; bseed = s; bd = d; }
+        coarseResult.push({seed:s, score:d.score, overall:d.overall, recent:d.recentRate});
+        if(idx % 50 === 0) {
+            // 显示进度
+        }
     }
     if(!bseed) return {error: 1};
     const ss = Math.max(B_SEED_MIN, bseed - 9);
     const es = Math.min(B_SEED_MAX, bseed + 9);
+    let refineResult = [];
     for(let s = ss; s <= es; s++) {
         const d = seedBacktest(h, s);
         if(d.error) continue;
         if(d.score > bs) { bs = d.score; bseed = s; bd = d; }
+        refineResult.push({seed:s, score:d.score, overall:d.overall, recent:d.recentRate});
     }
-    return {bestSeed: bseed, score: bs, detail: bd};
+    return {
+        bestSeed: bseed,
+        score: bs,
+        detail: bd,
+        coarseSeeds: coarseResult.slice(0, 20),
+        refineSeeds: refineResult.slice(0, 20),
+        topScore: bs
+    };
 }
 
 function predictB(h) {
@@ -305,7 +462,11 @@ function predictB(h) {
         pEven: 1 - pOdd,
         prediction: pOdd >= 0.5 ? "单" : "双",
         groups: g,
-        detail: r.detail
+        detail: r.detail,
+        score: r.score,
+        coarseSeeds: r.coarseSeeds,
+        refineSeeds: r.refineSeeds,
+        topScore: r.topScore
     };
 }
 
@@ -355,7 +516,6 @@ function parseAPI(json) {
         if(typeof it.num !== "undefined" && it.num !== null && it.num !== "") {
             sum = parseInt(it.num);
         } else {
-            // 从 number 字段解析
             const parts = String(it.number).split("+");
             if(parts.length === 3) {
                 sum = parts.map(Number).reduce((a,b) => a + b, 0);
@@ -391,35 +551,75 @@ let session = {
     records: []
 };
 
+// 保存完整数据
 function persistAll() {
     try {
-        localStorage.setItem("pc28_history_v122", JSON.stringify(historyData));
-        localStorage.setItem("pc28_session_v122", JSON.stringify(session));
+        const dataToSave = {
+            aCorrect: session.aCorrect || 0,
+            aWrong: session.aWrong || 0,
+            bCorrect: session.bCorrect || 0,
+            bWrong: session.bWrong || 0,
+            fCorrect: session.fCorrect || 0,
+            fWrong: session.fWrong || 0,
+            records: session.records || [],
+            historyData: historyData || []
+        };
+        localStorage.setItem("pc28_full_data_v122", JSON.stringify(dataToSave));
+    } catch(e) {
+        console.log("保存数据失败:", e);
+    }
+}
+
+// 恢复完整数据
+function restoreAll() {
+    try {
+        const raw = localStorage.getItem("pc28_full_data_v122");
+        if(raw) {
+            const data = JSON.parse(raw);
+            session = {
+                aCorrect: data.aCorrect || 0,
+                aWrong: data.aWrong || 0,
+                bCorrect: data.bCorrect || 0,
+                bWrong: data.bWrong || 0,
+                fCorrect: data.fCorrect || 0,
+                fWrong: data.fWrong || 0,
+                records: data.records || []
+            };
+            if(data.historyData && Array.isArray(data.historyData) && data.historyData.length) {
+                historyData = data.historyData;
+            }
+            return true;
+        }
+    } catch(e) {
+        console.log("恢复数据失败:", e);
+    }
+    return false;
+}
+
+function cacheHistoryData() {
+    try {
+        localStorage.setItem("pc28_history_cache_v122", JSON.stringify(historyData));
     } catch(e) {}
 }
 
-function restoreAll() {
+function restoreHistoryCache() {
     try {
-        const hRaw = localStorage.getItem("pc28_history_v122");
-        if(hRaw) { const h = JSON.parse(hRaw); if(Array.isArray(h) && h.length) historyData = h; }
-        const sRaw = localStorage.getItem("pc28_session_v122");
-        if(sRaw) {
-            const s = JSON.parse(sRaw);
-            session = {
-                aCorrect: s.aCorrect || 0,
-                aWrong: s.aWrong || 0,
-                bCorrect: s.bCorrect || 0,
-                bWrong: s.bWrong || 0,
-                fCorrect: s.fCorrect || 0,
-                fWrong: s.fWrong || 0,
-                records: s.records || []
-            };
+        const hRaw = localStorage.getItem("pc28_history_cache_v122");
+        if(hRaw) {
+            const h = JSON.parse(hRaw);
+            if(Array.isArray(h) && h.length) {
+                historyData = h;
+                return true;
+            }
         }
     } catch(e) {}
+    return false;
 }
 
 function saveSession() {
-    try { localStorage.setItem("pc28_session_v122", JSON.stringify(session)); } catch(e) {}
+    try { 
+        persistAll();
+    } catch(e) {}
 }
 
 function logMsg(m) {
@@ -459,6 +659,54 @@ function verifyOne() {
     return true;
 }
 
+// ============================================================
+// 【新增1】补录缺失的预测(解决跳期断更问题)
+// ============================================================
+function backfillPredictions() {
+    if(historyData.length < 10) return;
+    
+    let backfillCount = 0;
+    
+    // 从旧到新遍历
+    for(let i = historyData.length - 2; i >= 0; i--) {
+        const h = historyData[i];
+        const target = parseInt(h.nbr) + 1;
+        
+        // 检查是否已有预测记录
+        const exists = session.records.some(r => r.target === target);
+        if(exists) continue;
+        
+        // 只用 target 期之前的数据
+        const tempHistory = historyData.filter(p => parseInt(p.nbr) < target);
+        if(tempHistory.length < 10) continue;
+        
+        // 用当时的数据计算预测
+        const resA = predictA(tempHistory);
+        let resB = {pOdd: 0.5, prediction: "--", seed: null, groups: [], detail: null, error: 1};
+        if(tempHistory.length >= 50) {
+            try { resB = predictB(tempHistory); } catch(e) {}
+        }
+        
+        if(resA.prediction && resB.prediction !== "--" && !resB.error) {
+            const kill = buildKill(resA, resB);
+            session.records.push({
+                target: target,
+                predA: resA.prediction,
+                predB: resB.prediction,
+                killed: kill.killedGroup,
+                status: "待验证"  // 标记为待验证
+            });
+            backfillCount++;
+            logMsg("📝 补录预测: 第" + target + "期 → 杀" + kill.killedGroup);
+        }
+    }
+    
+    if(backfillCount > 0) {
+        persistAll();
+        logMsg("📦 补录完成，共补录 " + backfillCount + " 期预测");
+    }
+}
+
 function checkAutoReset() {
     const verifiedCount = session.aCorrect + session.aWrong;
     if(verifiedCount >= MAX_VERIFIED_RECORDS) {
@@ -473,10 +721,216 @@ function checkAutoReset() {
 }
 
 // ============================================================
-// 十、UI更新
+// 十、UI更新(含详细计算过程展示)
 // ============================================================
+function renderProcessA(resA) {
+    const container = document.getElementById("process-a-content");
+    if(!resA || !resA.windows) {
+        container.innerHTML = '<div class="process-glass"><div class="step-content"><span style="color:#5a6f8a;">⏳ 等待数据...</span></div></div>';
+        return;
+    }
+    let html = '<div class="process-glass">';
+
+    // ===== 步骤1：各窗口基础概率 =====
+    html += '<div class="process-step">';
+    html += '<div class="step-number">1</div>';
+    html += '<div class="step-content">';
+    html += '<div class="step-title">📊 各窗口「大」概率 (P大)</div>';
+    html += '<div class="step-detail">';
+    html += '<div class="process-grid">';
+    A_WINDOWS.forEach(w => {
+        const win = resA.windows[w] || {};
+        const p = (win.p_big || 0.5) * 100;
+        const pred = win.score >= 0.5 ? '大' : '小';
+        html += '<div class="item">';
+        html += '<div class="label">' + w + '期</div>';
+        html += '<div class="val">' + p.toFixed(1) + '%</div>';
+        html += '<div class="sub">→ ' + pred + '</div>';
+        html += '</div>';
+    });
+    html += '</div>';
+    html += '</div></div></div>';
+
+    // ===== 步骤2：短期趋势信号 =====
+    html += '<div class="process-step">';
+    html += '<div class="step-number">2</div>';
+    html += '<div class="step-content">';
+    html += '<div class="step-title">📈 短期趋势信号 (最近5期)</div>';
+    html += '<div class="step-detail">';
+    const w10 = resA.windows[10] || {};
+    const trendSig = w10.trend_signal || 0.5;
+    const sp = w10.p_big ? (w10.p_big * 0.8 + 0.1) : 0.5;
+    html += '<span class="process-tag blue">最近5期P大</span> ' + (sp * 100).toFixed(1) + '% → ';
+    html += '<span class="val">趋势信号 = ' + (trendSig * 100).toFixed(1) + '%</span>';
+    html += ' <span style="font-size:10px;color:#5a6f8a;">(偏离0.5越远趋势越强)</span>';
+    html += '</div></div></div>';
+
+    // ===== 步骤3：连续同向信号 =====
+    html += '<div class="process-step">';
+    html += '<div class="step-number">3</div>';
+    html += '<div class="step-content">';
+    html += '<div class="step-title">🔗 连续同向信号 (当前连开)</div>';
+    html += '<div class="step-detail">';
+    const cs = w10.current_streak || 0;
+    const lb = w10.p_big ? (w10.p_big >= 0.5) : true;
+    const streakSigVal = w10.streak_signal || 0.5;
+    html += '<span class="process-tag orange">当前连开</span> ' + cs + '期 ';
+    html += '(方向: ' + (lb ? '大' : '小') + ') → ';
+    html += '<span class="val">连续信号 = ' + (streakSigVal * 100).toFixed(1) + '%</span>';
+    if(cs >= 4 && cs < 6) {
+        const adj = w10.reversal_adj || 0;
+        html += ' <span class="hl">⚠️ 反转调整 ' + (adj * 100).toFixed(1) + '%</span>';
+    }
+    html += '</div></div></div>';
+
+    // ===== 步骤4：各窗口综合得分 =====
+    html += '<div class="process-step">';
+    html += '<div class="step-number">4</div>';
+    html += '<div class="step-content">';
+    html += '<div class="step-title">⚖️ 各窗口综合得分 (P大×40% + 趋势×30% + 连续×30%)</div>';
+    html += '<div class="step-detail">';
+    html += '<div class="process-grid">';
+    A_WINDOWS.forEach(w => {
+        const win = resA.windows[w] || {};
+        const s = (win.score || 0.5) * 100;
+        const rel = (win.reliability || 0) * 100;
+        const eff = (resA.effs && resA.effs[w]) ? (resA.effs[w] * 100) : 0;
+        const pred = win.score >= 0.5 ? '大' : '小';
+        html += '<div class="item">';
+        html += '<div class="label">' + w + '期</div>';
+        html += '<div class="val">' + s.toFixed(1) + '%</div>';
+        html += '<div class="sub">可信' + rel.toFixed(0) + '% 权重×' + eff.toFixed(0) + '%</div>';
+        html += '</div>';
+    });
+    html += '</div>';
+    html += '</div></div></div>';
+
+    // ===== 步骤5：加权汇总 =====
+    const fs = (resA.final_score || 0.5) * 100;
+    const predA = resA.prediction || '--';
+    const type = resA.type || '--';
+    html += '<div class="process-step">';
+    html += '<div class="step-number">5</div>';
+    html += '<div class="step-content">';
+    html += '<div class="step-title">🎯 加权汇总 → 最终预测</div>';
+    html += '<div class="step-detail">';
+    html += '<span class="process-tag purple">最终分数</span> ';
+    html += '<span class="val">' + fs.toFixed(1) + '%</span> ';
+    html += '→ <span class="hl" style="font-size:14px;">预测 <b>' + predA + '</b></span> ';
+    html += '｜ 走势判定：<span class="hl-blue">' + type + '</span>';
+    html += '</div></div></div>';
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function renderProcessB(resB, h) {
+    const container = document.getElementById("process-b-content");
+    if(!resB || resB.error) {
+        const msg = (h && h.length < 50) ? '需≥50期，当前' + h.length + '期' : '等待数据...';
+        container.innerHTML = '<div class="process-glass"><div class="step-content"><span style="color:#5a6f8a;">⏳ ' + msg + '</span></div></div>';
+        return;
+    }
+    let html = '<div class="process-glass">';
+
+    // ===== 步骤1：Seed搜索概览 =====
+    html += '<div class="process-step">';
+    html += '<div class="step-number">1</div>';
+    html += '<div class="step-content">';
+    html += '<div class="step-title">🔍 Seed搜索范围</div>';
+    html += '<div class="step-detail">';
+    html += '<span class="process-tag blue">粗扫</span> ' + B_SEED_MIN + '～' + B_SEED_MAX + ' 步长' + B_COARSE_STEP + ' → ';
+    html += '<span class="process-tag green">精扫</span> 围绕最优Seed ±9 逐Seed';
+    html += ' <span style="font-size:10px;color:#5a6f8a;">(共扫描约' + Math.round((B_SEED_MAX-B_SEED_MIN)/B_COARSE_STEP) + '个Seed)</span>';
+    html += '</div></div></div>';
+
+    // ===== 步骤2：最优Seed + 评分 =====
+    html += '<div class="process-step">';
+    html += '<div class="step-number">2</div>';
+    html += '<div class="step-content">';
+    html += '<div class="step-title">🏆 最优Seed = <span class="hl">' + resB.seed + '</span></div>';
+    html += '<div class="step-detail">';
+    html += '评分 = <span class="val">' + (resB.score || 0).toFixed(4) + '</span>';
+    if(resB.detail) {
+        html += ' ｜ 整体命中率 <span class="hl-blue">' + (resB.detail.overall * 100).toFixed(1) + '%</span>';
+        html += ' ｜ 近30期 <span class="hl-blue">' + (resB.detail.recentRate * 100).toFixed(1) + '%</span>';
+        html += ' ｜ 稳定性 <span class="hl-blue">' + (resB.detail.stability * 100).toFixed(1) + '%</span>';
+        html += ' ｜ 最大连错 <span class="hl">' + (resB.detail.max_loss || 0) + '</span>期';
+    }
+    html += '</div></div></div>';
+
+    // ===== 步骤3：评分四维度 =====
+    html += '<div class="process-step">';
+    html += '<div class="step-number">3</div>';
+    html += '<div class="step-content">';
+    html += '<div class="step-title">📊 评分四维度 (整体40% + 近期30% + 稳定20% + 连错10%)</div>';
+    html += '<div class="step-detail">';
+    if(resB.detail) {
+        const d = resB.detail;
+        html += '<div class="process-inline">';
+        html += '<span class="item">整体 ' + (d.overall * 100).toFixed(1) + '% ×0.4</span>';
+        html += '<span class="item">近期 ' + (d.recentRate * 100).toFixed(1) + '% ×0.3</span>';
+        html += '<span class="item">稳定 ' + (d.stability * 100).toFixed(1) + '% ×0.2</span>';
+        html += '<span class="item">连错惩罚 ' + (d.lossPen * 100).toFixed(1) + '% ×0.1</span>';
+        html += '<span class="item" style="background:#e8ecf2;font-weight:700;">→ 总分 ' + (d.score * 100).toFixed(1) + '%</span>';
+        html += '</div>';
+    }
+    html += '</div></div></div>';
+
+    // ===== 步骤4：推三组 =====
+    if(resB.groups && resB.groups.length) {
+        html += '<div class="process-step">';
+        html += '<div class="step-number">4</div>';
+        html += '<div class="step-content">';
+        html += '<div class="step-title">🎯 推三组 (Mulberry32 + RULES)</div>';
+        html += '<div class="step-detail">';
+        html += '<span class="process-tag purple">三组</span> ';
+        html += resB.groups.map(g => '<span class="tag" style="background:#5b6abf;font-size:11px;padding:1px 8px;">' + g + '</span>').join(' ');
+        html += ' ｜ 单/双权重：<span class="val">单 ' + (resB.pOdd * 100).toFixed(1) + '%</span>';
+        html += ' / <span class="val">双 ' + (resB.pEven * 100).toFixed(1) + '%</span>';
+        html += ' → <span class="hl" style="font-size:14px;">预测 <b>' + resB.prediction + '</b></span>';
+        html += '</div></div></div>';
+    }
+
+    // ===== 步骤5：粗扫 Top 10(毛玻璃方框) =====
+    if(resB.coarseSeeds && resB.coarseSeeds.length) {
+        html += '<div class="process-step">';
+        html += '<div class="step-number">5</div>';
+        html += '<div class="step-content">';
+        html += '<div class="step-title">🔎 粗扫 Top 10</div>';
+        html += '<div class="step-detail">';
+        html += '<div class="process-sub-glass">';
+        const top = resB.coarseSeeds.slice(0, 10);
+        html += top.map(s => '<span class="process-tag blue">Seed' + s.seed + '</span> (' + (s.score*100).toFixed(1) + '%)').join(' ｜ ');
+        html += '</div>';
+        html += '</div></div></div>';
+    }
+
+    // ===== 步骤6：精扫 Top 10(毛玻璃方框) =====
+    if(resB.refineSeeds && resB.refineSeeds.length) {
+        html += '<div class="process-step">';
+        html += '<div class="step-number">6</div>';
+        html += '<div class="step-content">';
+        html += '<div class="step-title">🎯 精扫 Top 10</div>';
+        html += '<div class="step-detail">';
+        html += '<div class="process-sub-glass">';
+        const top = resB.refineSeeds.slice(0, 10);
+        html += top.map(s => '<span class="process-tag green">Seed' + s.seed + '</span> (' + (s.score*100).toFixed(1) + '%)').join(' ｜ ');
+        html += '</div>';
+        html += '</div></div></div>';
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
 function updateUI() {
-    if(!historyData.length) return;
+    if(!historyData.length) {
+        document.getElementById("target-period").textContent = "加载中...";
+        document.getElementById("model-a").textContent = "--";
+        document.getElementById("model-b").textContent = "--";
+        return;
+    }
     const latest = historyData[historyData.length - 1];
     const target = String(parseInt(latest.nbr) + 1);
     document.getElementById("target-period").textContent = target;
@@ -488,17 +942,23 @@ function updateUI() {
     document.getElementById("a-prob").textContent = "大 " + (resA.weightedProbability["大"] * 100).toFixed(1) + "% / 小 " + (resA.weightedProbability["小"] * 100).toFixed(1) + "%";
     document.getElementById("a-type").textContent = resA.type;
 
-    let resB = {pOdd: 0.5, prediction: "--", seed: null, groups: [], detail: null};
+    renderProcessA(resA);
+
+    let resB = {pOdd: 0.5, prediction: "--", seed: null, groups: [], detail: null, error: 1};
     if(historyData.length >= 50) {
         try {
             resB = predictB(historyData);
             document.getElementById("model-b").textContent = resB.prediction;
         } catch(e) {
             document.getElementById("model-b").textContent = "错误";
+            resB.error = 1;
         }
     } else {
         document.getElementById("model-b").textContent = "数据不足(需50期)";
+        resB.error = 1;
     }
+
+    renderProcessB(resB, historyData);
 
     if(resB.seed) {
         document.getElementById("b-seed").textContent = resB.seed;
@@ -509,7 +969,7 @@ function updateUI() {
     }
     document.getElementById("b-groups").textContent = (resB.groups || []).join(" ");
 
-    if(resA.prediction && resB.prediction !== "--") {
+    if(resA.prediction && resB.prediction !== "--" && !resB.error) {
         const kill = buildKill(resA, resB);
         document.getElementById("combo-scores").textContent = Object.entries(kill.scores).map(([k,v]) => k + ":" + v.toFixed(3)).join(" | ");
         document.getElementById("kill-group").textContent = "杀" + kill.killedGroup;
@@ -522,6 +982,7 @@ function updateUI() {
                 killed: kill.killedGroup,
                 status: "待验证"
             });
+            persistAll();
         }
     }
 
@@ -532,7 +993,6 @@ function updateUI() {
     document.getElementById("stat-b").textContent = "正确" + session.bCorrect + "/错误" + session.bWrong + "/" + pct(session.bCorrect, session.bWrong);
     document.getElementById("stat-final").textContent = "正确" + session.fCorrect + "/错误" + session.fWrong + "/" + pct(session.fCorrect, session.fWrong);
 
-    // 最近30期表格
     const tb = document.getElementById("history-body");
     tb.innerHTML = "";
     historyData.slice(-30).reverse().forEach(h => {
@@ -568,6 +1028,7 @@ function updateUI() {
     });
 
     persistAll();
+    cacheHistoryData();
 }
 
 // ============================================================
@@ -585,7 +1046,16 @@ async function pull() {
         if(!parsed.length) throw new Error("解析后无数据");
         historyData = parsed;
         logMsg("✅ 实拉 " + historyData.length + " 期，最新期 " + historyData[historyData.length - 1].nbr);
+        
+        // 【修改2】验证已有预测
         while(verifyOne()) {}
+        
+        // 【修改2】补录缺失的预测(解决跳期断更问题)
+        backfillPredictions();
+        
+        // 【修改6】再次验证(补录的预测可能已经开奖)
+        while(verifyOne()) {}
+        
         if(checkAutoReset()) { updateUI(); }
         updateUI();
     } catch(err) {
@@ -596,6 +1066,7 @@ async function pull() {
 // ============================================================
 // 十二、事件绑定 + 启动
 // ============================================================
+
 document.addEventListener("visibilitychange", () => {
     if(document.visibilityState === "visible") {
         logMsg("👁 切回前台，重新拉取");
@@ -605,9 +1076,15 @@ document.addEventListener("visibilitychange", () => {
 
 window.addEventListener("pageshow", (e) => {
     if(e.persisted) {
-        logMsg("📱 页面恢复，重新渲染");
-        restoreAll();
-        updateUI();
+        logMsg("📱 页面恢复，先显示缓存数据，再拉取最新");
+        if(restoreAll()) {
+            updateUI();
+            logMsg("📦 已显示完整缓存数据");
+        } else if(restoreHistoryCache()) {
+            updateUI();
+            logMsg("📦 已显示缓存数据(仅开奖历史)");
+        }
+        pull();
     }
 });
 
@@ -615,7 +1092,7 @@ document.getElementById("btn-reset").addEventListener("click", function() {
     session.aCorrect = 0; session.aWrong = 0;
     session.bCorrect = 0; session.bWrong = 0;
     session.fCorrect = 0; session.fWrong = 0;
-    saveSession();
+    persistAll();
     updateUI();
     logMsg("🗑 统计已清零");
     this.textContent = "✅ 已清零！";
@@ -623,10 +1100,19 @@ document.getElementById("btn-reset").addEventListener("click", function() {
     setTimeout(() => { this.textContent = "🗑 清零统计"; this.classList.remove("done"); }, 1500);
 });
 
-// 启动
+// ============================================================
+// 十三、启动
+// ============================================================
 logMsg("🚀 启动 v12.2 杀组优化版，数据源：pc28.help");
-restoreAll();
-updateUI();
+
+if(restoreAll()) {
+    updateUI();
+    logMsg("📦 已恢复完整数据，记录数: " + session.records.length);
+} else if(restoreHistoryCache()) {
+    updateUI();
+    logMsg("📦 已恢复缓存数据(仅开奖历史)");
+}
+
 pull();
 setInterval(pull, CHECK_INTERVAL);
 </script>
