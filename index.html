@@ -54,7 +54,7 @@ th { background: #eef2f7; color: #1a3a5c; }
 
 <div class="panel">
   <h2>🔗 接口配置</h2>
-  <div class="row"><span>API_URL:</span><strong id="api-url">https://api.allorigins.win/raw?url=https://pc28.help/api/kj.json?nbr=100</strong></div>
+  <div class="row"><span>API_URL:</span><strong id="api-url">https://pc28.help/api/kj.json?nbr=100</strong></div>
   <div class="row"><span>轮询:</span><strong id="check-interval">10s</strong></div>
 </div>
 
@@ -120,7 +120,8 @@ th { background: #eef2f7; color: #1a3a5c; }
 // ============================================================
 // 一、配置
 // ============================================================
-const API_URL = "https://api.allorigins.win/raw?url=https://pc28.help/api/kj.json?nbr=100";
+// 【修改】API 地址保持 pc28.help，但用 fetchWithTimeout 风格拉取
+const API_URL = "https://pc28.help/api/kj.json?nbr=100";
 const FETCH_TIMEOUT = 10000;
 const CHECK_INTERVAL = 10000;
 const MAX_VERIFIED_RECORDS = 100;
@@ -473,7 +474,7 @@ function logMsg(m){
 }
 
 // ============================================================
-// 九、数据拉取（改用 fetchWithTimeout，解决跨域卡死问题）
+// 九、数据拉取（使用 fetchWithTimeout + Toao 风格解析）
 // ============================================================
 function fetchWithTimeout(url, timeoutMs) {
   return new Promise(function(resolve, reject) {
@@ -494,37 +495,44 @@ function fetchWithTimeout(url, timeoutMs) {
   });
 }
 
-async function pull(){
-  try{
-    const resp = await fetchWithTimeout(API_URL, FETCH_TIMEOUT);
-    if(!resp.ok)throw new Error("HTTP "+resp.status);
-    const json=await resp.json();
-    const parsed=parseAPI(json);
-    if(!parsed.length)throw new Error("解析后无数据");
-    historyData=parsed;
-    document.getElementById("cors-bar").style.display="none";
-    logMsg(`✅ 实拉 ${historyData.length} 期，最新期 ${historyData[historyData.length-1].nbr}`);
-    while(verifyOne()){}
-    if(checkAutoReset()){ updateUI(); }
-    updateUI();
-  }catch(err){
-    document.getElementById("cors-bar").style.display="block";
-    logMsg("❌ 请求失败："+err.message);
-  }
+function fetchData() {
+  fetchWithTimeout(API_URL, FETCH_TIMEOUT)
+    .then(function(res) { return res.json(); })
+    .then(function(json) {
+      if(json.message === "success" && json.data && json.data.length > 0) {
+        var parsed = parseAPI(json);
+        if(parsed.length > 0) {
+          historyData = parsed;
+          document.getElementById("cors-bar").style.display = "none";
+          logMsg("✅ 实拉 " + historyData.length + " 期，最新期 " + historyData[historyData.length-1].nbr);
+          while(verifyOne()) {}
+          if(checkAutoReset()){ updateUI(); }
+          updateUI();
+        } else {
+          logMsg("⚠️ 解析后无数据");
+        }
+      } else {
+        logMsg("⚠️ API返回异常");
+      }
+    })
+    .catch(function(e) {
+      document.getElementById("cors-bar").style.display = "block";
+      logMsg("❌ 请求失败：" + e.message);
+    });
 }
 
 document.addEventListener("visibilitychange", ()=>{
   if(document.visibilityState==="visible"){
     logMsg("👁 切回前台，重新拉取数据");
-    pull();
+    fetchData();
   }
 });
 
 document.getElementById("btn-reset").addEventListener("click", resetStats);
 
-logMsg("🚀 启动 v12.2 HTML移植版（含100期对错统计表）");
-pull();
-setInterval(pull, CHECK_INTERVAL);
+logMsg("🚀 启动 v12.2 (100期统计表)");
+fetchData();
+setInterval(fetchData, CHECK_INTERVAL);
 </script>
 </body>
 </html>
