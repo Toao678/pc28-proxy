@@ -45,7 +45,7 @@ th { background: #eef2f7; color: #1a3a5c; }
 
 <div class="panel">
   <h2>🔗 接口配置</h2>
-  <div class="row"><span>API_URL:</span><strong>https://pc28.help/api/kj.json?nbr=100</strong></div>
+  <div class="row"><span>API_URL:</span><strong>https://api.allorigins.win/raw?url=https://pc28.help/api/kj.json?nbr=100</strong></div>
   <div class="row"><span>轮询:</span><strong>10s</strong></div>
 </div>
 
@@ -87,9 +87,9 @@ th { background: #eef2f7; color: #1a3a5c; }
 
 <script>
 // ============================================================
-// 一、配置
+// 一、配置（已替换为 CORS 代理）
 // ============================================================
-const API_URL = "https://pc28.help/api/kj.json?nbr=100";
+const API_URL = "https://api.allorigins.win/raw?url=https://pc28.help/api/kj.json?nbr=100";
 const FETCH_TIMEOUT = 10000;
 const CHECK_INTERVAL = 10000;
 const MAX_VERIFIED_RECORDS = 100;
@@ -435,7 +435,7 @@ async function pull(){
 
 document.getElementById("btn-reset").addEventListener("click", resetStats);
 
-logMsg("🚀 启动 v12.2 (100期统计表)");
+logMsg("🚀 启动 v12.2 (100期统计表, CORS代理版)");
 pull();
 setInterval(pull, CHECK_INTERVAL);
 </script>
