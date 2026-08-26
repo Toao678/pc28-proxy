@@ -54,7 +54,7 @@ th { background: #eef2f7; color: #1a3a5c; }
 
 <div class="panel">
   <h2>🔗 接口配置</h2>
-  <div class="row"><span>API_URL:</span><strong id="api-url">https://pc28.help/api/kj.json?nbr=100</strong></div>
+  <div class="row"><span>API_URL:</span><strong id="api-url">https://api.allorigins.win/raw?url=https://pc28.help/api/kj.json?nbr=100</strong></div>
   <div class="row"><span>轮询:</span><strong id="check-interval">10s</strong></div>
 </div>
 
@@ -119,9 +119,6 @@ th { background: #eef2f7; color: #1a3a5c; }
 <script>
 // ============================================================
 // 一、配置
-// ============================================================
-// ============================================================
-// 【修改1】API 地址换成 CORS 代理，解决跨域问题
 // ============================================================
 const API_URL = "https://api.allorigins.win/raw?url=https://pc28.help/api/kj.json?nbr=100";
 const FETCH_TIMEOUT = 10000;
@@ -476,8 +473,7 @@ function logMsg(m){
 }
 
 // ============================================================
-// ============================================================
-// 【修改2】数据拉取函数 pull() 改用 fetchWithTimeout 风格
+// 九、数据拉取（改用 fetchWithTimeout，解决跨域卡死问题）
 // ============================================================
 function fetchWithTimeout(url, timeoutMs) {
   return new Promise(function(resolve, reject) {
