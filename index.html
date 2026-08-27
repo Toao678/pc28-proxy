@@ -248,7 +248,7 @@ th { background:#eef2f7; color:#1a3a5c; }
 // ============================================================
 // 一、配置 - 使用 Toao 权威版 API
 // ============================================================
-const API_URL = "https://pc28.help/api/kj.json?nbr=80";
+const API_URL = "https://pc28.help/api/kj.json?nbr=100";
 const FETCH_TIMEOUT = 10000;
 const CHECK_INTERVAL = 10000;
 const MAX_VERIFIED_RECORDS = 100;
@@ -262,6 +262,7 @@ const A_WINDOWS = [10, 20, 30, 50, 100];
 const A_DEFAULT_WINDOW_WEIGHTS = {10:0.10, 20:0.15, 30:0.20, 50:0.25, 100:0.30};
 const A_RELIABILITY_FLOOR = 0.30;
 const A_REVERSAL_STREAK = 4;
+const A_ANOMALY_GAP = 5;
 
 // 模型B参数
 const B_SEED_MIN = 1000;
@@ -288,6 +289,7 @@ let modelAWeights = {
         "傍晚": { weight: A_DEFAULT_WEIGHT.slice(), lastUpdate: 0 },
         "晚上": { weight: A_DEFAULT_WEIGHT.slice(), lastUpdate: 0 }
     },
+    lastObservedPeriod: null,
     forceRefresh: function() {
         for(const key in this.slotWeights) {
             this.slotWeights[key].lastUpdate = 0;
@@ -536,6 +538,19 @@ function modelAWindow(h,w, weight) {
 }
 
 function predictA(h) {
+    // 数据异常检测：最新期号与上次观察期号跳跃超过5期时，强制刷新A模型权重
+    if(h && h.length > 0) {
+        const currentPeriod = parseInt(h[h.length - 1].nbr);
+        if(modelAWeights.lastObservedPeriod !== null) {
+            const periodGap = currentPeriod - modelAWeights.lastObservedPeriod;
+            if(periodGap > A_ANOMALY_GAP) {
+                modelAWeights.forceRefresh();
+                logMsg("⚠️ 检测到期号跳跃 " + periodGap + " 期，已强制刷新A模型权重");
+            }
+        }
+        modelAWeights.lastObservedPeriod = currentPeriod;
+    }
+
     // 获取当前时段
     const now = new Date();
     const hour = now.getHours();
@@ -590,34 +605,102 @@ function seedBacktest(h, seed) {
     if(h.length < 50) return {error: 1};
     const hits = [];
     const details = [];
+    const groupStats = {};
+    ALL_TYPES.forEach(g => {
+        groupStats[g] = {hits: 0, total: 0, excluded: 0, opened: 0};
+    });
+
     for(let i = 50; i < h.length; i++) {
         const g = getBPrediction(seed, {nbr: h[i-1].nbr, sum: h[i-1].sum, type: h[i-1].type});
-        const hit = g.includes(h[i].type) ? 1 : 0;
+        const actual = h[i].type;
+        const hit = g.includes(actual) ? 1 : 0;
         hits.push(hit);
         details.push({target: h[i].nbr, groups: g.join(','), hit: hit});
+
+        // 与Python v12.2一致：统计每个组合被推入、命中、被排除以及实际开出的次数
+        g.forEach(x => {
+            if(groupStats[x]) {
+                groupStats[x].total += 1;
+                if(actual === x) groupStats[x].hits += 1;
+            }
+        });
+        ALL_TYPES.forEach(x => {
+            if(!g.includes(x)) groupStats[x].excluded += 1;
+            if(actual === x) groupStats[x].opened += 1;
+        });
     }
+
     const total = hits.length;
     if(!total) return {error: 1};
     const overall = hits.reduce((a,b) => a + b, 0) / total;
-    const r30 = hits.slice(-30);
+    const r30 = hits.slice(-Math.min(30, total));
     const rr = r30.reduce((a,b) => a + b, 0) / r30.length;
+
     const blocks = [];
     for(let i = 0; i <= total - 10; i += 10) {
         const b = hits.slice(i, i + 10);
         blocks.push(b.reduce((a,c) => a + c, 0) / b.length);
     }
-    const mean = blocks.reduce((a,b) => a + b, 0) / blocks.length;
-    const variance = blocks.reduce((a,b) => a + (b - mean) ** 2, 0) / blocks.length;
-    const stability = Math.max(0, Math.min(1, 1 - Math.sqrt(variance)));
+    const mean = blocks.length ? blocks.reduce((a,b) => a + b, 0) / blocks.length : 0.5;
+    const variance = blocks.length ? blocks.reduce((a,b) => a + (b - mean) ** 2, 0) / blocks.length : 0;
+    let stability = blocks.length >= 2 ? Math.max(0, Math.min(1, 1 - Math.sqrt(variance))) : 0.5;
+
+    const recentBlocks = blocks.slice(-3);
+    let recentBlockStability = 0.5;
+    if(recentBlocks.length >= 2) {
+        const rbMean = recentBlocks.reduce((a,b) => a + b, 0) / recentBlocks.length;
+        const rbVar = recentBlocks.reduce((a,b) => a + (b - rbMean) ** 2, 0) / recentBlocks.length;
+        recentBlockStability = Math.max(0, Math.min(1, 1 - Math.sqrt(rbVar)));
+    }
+    stability = stability * 0.60 + recentBlockStability * 0.40;
+
     let c = 0, m = 0;
     hits.forEach(x => { if(!x){ c++; m = Math.max(m,c); } else c = 0; });
     const lossPen = Math.max(0, 1 - m / total);
     const score = overall * 0.4 + rr * 0.3 + stability * 0.2 + lossPen * 0.1;
-    return {overall, recentRate: rr, stability, score, hits, details, max_loss:m, lossPen:lossPen};
+
+    // 与Python v12.2一致：组合命中率轻度平滑 + 样本可信度 + 被排除后实际开出的风险
+    const groupPrecision = {};
+    const groupConfidence = {};
+    const groupExcludedRisk = {};
+    ALL_TYPES.forEach(g => {
+        const st = groupStats[g];
+        groupPrecision[g] = (st.hits + B_GROUP_SMOOTHING) / (st.total + 2 * B_GROUP_SMOOTHING);
+        groupConfidence[g] = Math.min(1.0, st.total / 20.0);
+        const openedWhenExcluded = st.opened - st.hits;
+        groupExcludedRisk[g] = st.excluded > 0
+            ? (openedWhenExcluded + B_GROUP_SMOOTHING) / (st.excluded + 2 * B_GROUP_SMOOTHING)
+            : 0.5;
+    });
+
+    return {
+        overall,
+        recentRate: rr,
+        stability,
+        recentBlockStability,
+        score,
+        hits,
+        details,
+        max_loss: m,
+        lossPen: lossPen,
+        groupStats,
+        groupPrecision,
+        groupConfidence,
+        groupExcludedRisk,
+        recentEwma: (() => {
+            const recent10 = hits.slice(-Math.min(10, total));
+            if(!recent10.length) return 0.5;
+            let value = recent10[0];
+            for(let i = 1; i < recent10.length; i++) {
+                value = B_RECENT_EWMA_ALPHA * recent10[i] + (1 - B_RECENT_EWMA_ALPHA) * value;
+            }
+            return value;
+        })()
+    };
 }
 
 // ============================================================
-// 【修改】selectSeed - 增加 EWMA 二次筛选权重
+// 【修改】selectSeed - 精扫范围改为 Top 100 个粗扫Seed + EWMA
 // ============================================================
 function selectSeed(h) {
     if(h.length < 50) return {error: 1};
@@ -638,18 +721,39 @@ function selectSeed(h) {
         }
     }
     if(!bseed) return {error: 1};
-    const ss = Math.max(B_SEED_MIN, bseed - 9);
-    const es = Math.min(B_SEED_MAX, bseed + 9);
+    
+    // ============================================================
+    // 【修复】精扫范围改为 Top 100 个粗扫Seed(与Python一致)
+    // ============================================================
+    const B_REFINE_TOP = 100;
+    coarseResult.sort((a,b) => b.score - a.score);
+    const topCoarse = coarseResult.slice(0, Math.min(B_REFINE_TOP, coarseResult.length));
+    
+    const refineSet = new Set();
+    for(let idx=0; idx<topCoarse.length; idx++) {
+        const seed = topCoarse[idx].seed;
+        const startSeed = Math.max(B_SEED_MIN, seed - (B_COARSE_STEP - 1));
+        const endSeed = Math.min(B_SEED_MAX, seed + (B_COARSE_STEP - 1));
+        for(let s = startSeed; s <= endSeed; s++) {
+            refineSet.add(s);
+        }
+    }
+    
+    const refineSeeds = Array.from(refineSet).sort((a,b) => a - b);
     let refineResult = [];
-    for(let s = ss; s <= es; s++) {
+    for(let idx=0; idx<refineSeeds.length; idx++) {
+        const s = refineSeeds[idx];
         const d = seedBacktest(h, s);
         if(d.error) continue;
         if(d.score > bs) { bs = d.score; bseed = s; bd = d; }
         refineResult.push({seed:s, score:d.score, overall:d.overall, recent:d.recentRate});
+        if(idx % 50 === 0) {
+            // 显示进度
+        }
     }
     
     // ============================================================
-    // 【修改】合并两轮结果，使用 EWMA 二次筛选
+    // 合并两轮结果，使用 EWMA 二次筛选
     // ============================================================
     const merged = {};
     coarseResult.forEach(item => { merged[item.seed] = item; });
@@ -662,20 +766,16 @@ function selectSeed(h) {
     
     const pool = ranked.slice(0, Math.min(50, ranked.length));
     
-    // ============================================================
-    // 【新增】二次筛选排序(加入 EWMA 权重)
-    // ============================================================
+    // 二次筛选排序(加入 EWMA 权重)
     const B_EWMA_SECONDARY_WEIGHT = 0.10;
     
     function candidateKey(item) {
-        // 重新计算 detail
         const detail = seedBacktest(h, item.seed);
         if(detail.error) return item.score * 0.50;
         
         const consistency = 1.0 - Math.min(Math.abs(detail.overall - detail.recentRate), 1.0);
         const recentBlock = detail.stability || 0.5;
         
-        // 计算 EWMA
         const hits = detail.hits || [];
         let ewma = 0.5;
         if(hits.length > 0) {
@@ -711,25 +811,80 @@ function selectSeed(h) {
     };
 }
 
+// ============================================================
+// 【新增】B模型缓存 - 避免每次重复扫描(与Python一致)
+// ============================================================
+let bModelCache = {
+    seed: null,
+    detail: null,
+    lastUpdatePeriod: null,
+    historyLength: 0
+};
+
 function predictB(h) {
-    const r = selectSeed(h);
-    if(r.error) return {error: 1};
-    const g = getBPrediction(r.bestSeed, h[h.length - 1]);
-    let o = 0, e = 0;
-    g.forEach(x => x.endsWith("单") ? o++ : e++);
-    const total = o + e;
-    const pOdd = total ? o / total : 0.5;
+    // 检查是否需要重新扫描
+    const currentPeriod = h.length > 0 ? parseInt(h[h.length - 1].nbr) : 0;
+    const needRescan = (
+        bModelCache.seed === null ||
+        bModelCache.lastUpdatePeriod !== currentPeriod ||
+        h.length - bModelCache.historyLength >= 5
+    );
+
+    if(needRescan) {
+        const r = selectSeed(h);
+        if(r.error) return {error: 1};
+        bModelCache.seed = r.bestSeed;
+        bModelCache.detail = r.detail;
+        bModelCache.lastUpdatePeriod = currentPeriod;
+        bModelCache.historyLength = h.length;
+        logMsg("🔍 B模型重新扫描完成，Seed=" + bModelCache.seed);
+    }
+
+    const g = getBPrediction(bModelCache.seed, h[h.length - 1]);
+    const detail = bModelCache.detail || {};
+    const groupPrecision = detail.groupPrecision || {};
+    const groupConfidence = detail.groupConfidence || {};
+    const groupExcludedRisk = detail.groupExcludedRisk || {};
+
+    let oddScore = 0;
+    let evenScore = 0;
+    const groupWeights = {};
+
+    // 与Python v12.2一致：不再简单按“三组里有几个单”计算概率，
+    // 而是按组合历史表现、样本可信度和被排除风险进行质量加权。
+    g.forEach(x => {
+        const precision = groupPrecision[x] ?? 0.5;
+        const confidence = groupConfidence[x] ?? 0.0;
+        const excludedRisk = groupExcludedRisk[x] ?? 0.5;
+
+        const quality = 0.5 + 0.5 * precision;
+        const riskPenalty = B_EXCLUDED_PENALTY_WEIGHT * Math.max(0, excludedRisk - 0.5) * confidence;
+        const weight = Math.max(0.05, quality - riskPenalty);
+        groupWeights[x] = weight;
+
+        if(x.endsWith("单")) oddScore += weight;
+        else evenScore += weight;
+    });
+
+    const total = oddScore + evenScore;
+    const pOdd = total > 0 ? oddScore / total : 0.5;
+    const pEven = total > 0 ? evenScore / total : 0.5;
+
     return {
-        seed: r.bestSeed,
-        pOdd: pOdd,
-        pEven: 1 - pOdd,
-        prediction: pOdd >= 0.5 ? "单" : "双",
+        seed: bModelCache.seed,
+        pOdd,
+        pEven,
+        prediction: pOdd >= pEven ? "单" : "双",
         groups: g,
-        detail: r.detail,
-        score: r.score,
-        coarseSeeds: r.coarseSeeds,
-        refineSeeds: r.refineSeeds,
-        topScore: r.topScore
+        detail,
+        score: detail.score || 0,
+        coarseSeeds: [],
+        refineSeeds: [],
+        topScore: detail.score || 0,
+        groupPrecision: Object.fromEntries(g.map(x => [x, groupPrecision[x] ?? 0.5])),
+        groupConfidence: Object.fromEntries(g.map(x => [x, groupConfidence[x] ?? 0.0])),
+        groupExcludedRisk: Object.fromEntries(g.map(x => [x, groupExcludedRisk[x] ?? 0.5])),
+        groupWeights
     };
 }
 
