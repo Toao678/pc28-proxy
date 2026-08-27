@@ -38,7 +38,16 @@ th { background:#eef2f7; color:#1a3a5c; }
 .win-box { display:inline-flex; gap:4px; flex-wrap:wrap; justify-content:flex-end; }
 .win-item { border:1px solid #dde3ec; border-radius:4px; padding:1px 6px; background:#f8f9fb; font-size:11px; color:#2c3e50; font-weight:bold; min-width:48px; text-align:center; }
 .scroll-wrap { overflow-x:auto; }
-.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+
+/* ===== 左右两栏布局 ===== */
+.model-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.model-grid .panel {
+    margin-bottom: 0;
+}
 
 /* ===== 毛玻璃计算过程 ===== */
 .process-glass {
@@ -151,7 +160,22 @@ th { background:#eef2f7; color:#1a3a5c; }
     margin: 4px 0;
 }
 
-@media (max-width:600px){ .grid2{grid-template-columns:1fr;} .process-grid{grid-template-columns:1fr 1fr 1fr;} }
+@media (max-width:768px){
+    .model-grid {
+        grid-template-columns: 1fr;
+    }
+    .model-grid .panel {
+        margin-bottom: 10px;
+    }
+    .process-grid {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+}
+@media (max-width:480px){
+    .process-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
 </style>
 </head>
 <body>
@@ -175,20 +199,25 @@ th { background:#eef2f7; color:#1a3a5c; }
 <div class="row"><span>买入候选:</span><strong id="buy-groups" class="tag tag-buy">--</strong></div>
 </div>
 
-<!-- ====== 模型A计算过程 ====== -->
-<div class="panel" id="panel-process-a">
-<h2>🧮 模型A · 计算过程</h2>
-<div id="process-a-content">
-  <div class="process-glass"><div class="step-content"><span style="color:#5a6f8a;">⏳ 等待数据...</span></div></div>
-</div>
-</div>
+<!-- ====== 模型A + 模型B 左右并排 ====== -->
+<div class="model-grid">
 
-<!-- ====== 模型B计算过程 ====== -->
-<div class="panel" id="panel-process-b">
-<h2>🧮 模型B · 计算过程</h2>
-<div id="process-b-content">
-  <div class="process-glass"><div class="step-content"><span style="color:#5a6f8a;">⏳ 等待数据(需≥50期)...</span></div></div>
-</div>
+    <!-- 模型A -->
+    <div class="panel" id="panel-process-a">
+        <h2>🧮 模型A · 计算过程</h2>
+        <div id="process-a-content">
+            <div class="process-glass"><div class="step-content"><span style="color:#5a6f8a;">⏳ 等待数据...</span></div></div>
+        </div>
+    </div>
+
+    <!-- 模型B -->
+    <div class="panel" id="panel-process-b">
+        <h2>🧮 模型B · 计算过程</h2>
+        <div id="process-b-content">
+            <div class="process-glass"><div class="step-content"><span style="color:#5a6f8a;">⏳ 等待数据(需≥50期)...</span></div></div>
+        </div>
+    </div>
+
 </div>
 
 <!-- 统计面板 -->
@@ -219,7 +248,7 @@ th { background:#eef2f7; color:#1a3a5c; }
 // ============================================================
 // 一、配置 - 使用 Toao 权威版 API
 // ============================================================
-const API_URL = "https://pc28.help/api/kj.json?nbr=100";
+const API_URL = "https://pc28.help/api/kj.json?nbr=80";
 const FETCH_TIMEOUT = 10000;
 const CHECK_INTERVAL = 10000;
 const MAX_VERIFIED_RECORDS = 100;
@@ -242,6 +271,158 @@ const B_SCORE_WEIGHTS = [0.40, 0.30, 0.20, 0.10];
 const B_RECENT_EWMA_ALPHA = 0.35;
 const B_EXCLUDED_PENALTY_WEIGHT = 0.10;
 const B_GROUP_SMOOTHING = 0.5;
+
+// ============================================================
+// 【新增1】A模型权重动态优化相关参数
+// ============================================================
+const A_MAX_WEIGHT_DEVIATION = 0.10;
+const A_DEFAULT_WEIGHT = [0.40, 0.30, 0.30];
+const A_TYPE_WINDOWS = [10, 20, 30];
+let modelAWeights = {
+    slotWeights: {
+        "凌晨": { weight: A_DEFAULT_WEIGHT.slice(), lastUpdate: 0 },
+        "早上": { weight: A_DEFAULT_WEIGHT.slice(), lastUpdate: 0 },
+        "上午": { weight: A_DEFAULT_WEIGHT.slice(), lastUpdate: 0 },
+        "中午": { weight: A_DEFAULT_WEIGHT.slice(), lastUpdate: 0 },
+        "下午": { weight: A_DEFAULT_WEIGHT.slice(), lastUpdate: 0 },
+        "傍晚": { weight: A_DEFAULT_WEIGHT.slice(), lastUpdate: 0 },
+        "晚上": { weight: A_DEFAULT_WEIGHT.slice(), lastUpdate: 0 }
+    },
+    forceRefresh: function() {
+        for(const key in this.slotWeights) {
+            this.slotWeights[key].lastUpdate = 0;
+        }
+    },
+    getWeight: function(slot, slotHistory) {
+        const state = this.slotWeights[slot];
+        if(!state) return A_DEFAULT_WEIGHT.slice();
+        const n = slotHistory.length;
+        if(n >= 50 && (state.lastUpdate === 0 || n - state.lastUpdate >= 20)) {
+            const newWeight = searchBestWeight(slotHistory);
+            if(newWeight) {
+                state.weight = newWeight;
+                state.lastUpdate = n;
+            }
+        }
+        return state.weight.slice();
+    }
+};
+
+// ============================================================
+// 【新增2】生成权重候选
+// ============================================================
+function generateWeightCandidates() {
+    const candidates = [];
+    for(let i = 0; i <= 12; i++) {
+        candidates.push(Math.round((0.15 + i * 0.05) * 100) / 100);
+    }
+    const result = [];
+    for(let i = 0; i < candidates.length; i++) {
+        for(let j = 0; j < candidates.length; j++) {
+            const w3 = Math.round((1.0 - candidates[i] - candidates[j]) * 100) / 100;
+            if(w3 >= 0.15 && w3 <= 0.75 && Math.abs(candidates[i] + candidates[j] + w3 - 1.0) <= 0.001) {
+                result.push([candidates[i], candidates[j], w3]);
+            }
+        }
+    }
+    return result;
+}
+
+// ============================================================
+// 【新增3】A模型权重动态搜索
+// ============================================================
+function searchBestWeight(history) {
+    if(history.length < 50) return null;
+    
+    const candidates = generateWeightCandidates();
+    let bestScore = -1.0;
+    let bestWeight = A_DEFAULT_WEIGHT.slice();
+    
+    for(let idx = 0; idx < candidates.length; idx++) {
+        const weight = candidates[idx];
+        let hits = 0, total = 0;
+        
+        // 严格滚动：预测 history[i] 时只使用 history[:i]
+        for(let i = 10; i < history.length; i++) {
+            const prev = history.slice(0, i);
+            if(prev.length < 10) continue;
+            
+            const p = pBig(prev, 10);
+            
+            const short = recent(prev, Math.min(5, prev.length));
+            const shortP = short.length ? short.filter(x => isBig(x.sum)).length / short.length : 0.5;
+            const trendSignal = 0.5 + Math.max(-0.25, Math.min(0.25, (shortP - 0.5) * 0.8));
+            
+            const lastBig = isBig(prev[prev.length - 1].sum);
+            let currentStreak = 1;
+            for(let j = prev.length - 2; j >= 0; j--) {
+                if(isBig(prev[j].sum) === lastBig) currentStreak++;
+                else break;
+            }
+            const streakSignal = 0.5 + (lastBig ? 0.25 : -0.25) * Math.min(currentStreak / 5.0, 1.0);
+            
+            const raw = p * weight[0] + trendSignal * weight[1] + streakSignal * weight[2];
+            const pred = raw >= 0.5 ? "大" : "小";
+            const actual = isBig(history[i].sum) ? "大" : "小";
+            
+            if(pred === actual) hits++;
+            total++;
+        }
+        
+        const rollingRate = total > 0 ? hits / total : 0.5;
+        const distance = Math.abs(weight[0] - A_DEFAULT_WEIGHT[0]) + Math.abs(weight[1] - A_DEFAULT_WEIGHT[1]) + Math.abs(weight[2] - A_DEFAULT_WEIGHT[2]);
+        const regularization = Math.min(distance, 1.0) * 0.05;
+        const score = rollingRate - regularization;
+        
+        if(score > bestScore) {
+            bestScore = score;
+            bestWeight = weight.slice();
+        }
+    }
+    
+    // 限制偏离范围
+    const limited = [];
+    for(let i = 0; i < 3; i++) {
+        const low = Math.max(0.15, A_DEFAULT_WEIGHT[i] - A_MAX_WEIGHT_DEVIATION);
+        const high = Math.min(0.75, A_DEFAULT_WEIGHT[i] + A_MAX_WEIGHT_DEVIATION);
+        limited.push(Math.min(Math.max(bestWeight[i], low), high));
+    }
+    
+    const total = limited.reduce((a,b) => a + b, 0);
+    if(total <= 0) return A_DEFAULT_WEIGHT.slice();
+    return limited.map(x => Math.round((x / total) * 10000) / 10000);
+}
+
+// ============================================================
+// 【新增4】时段判断函数
+// ============================================================
+function getTimeSlot(hour, minute) {
+    if(hour === 19 && minute < 30) return "维护时段";
+    if(hour >= 0 && hour < 6) return "凌晨";
+    if(hour >= 6 && hour < 8) return "早上";
+    if(hour >= 8 && hour < 12) return "上午";
+    if(hour >= 12 && hour < 14) return "中午";
+    if(hour >= 14 && hour < 18) return "下午";
+    if(hour >= 18 && hour < 19) return "傍晚";
+    return "晚上";
+}
+
+function isMaintenanceTime(hour, minute) {
+    return hour === 19 && minute < 30;
+}
+
+// ============================================================
+// 【新增5】EWMA 计算函数
+// ============================================================
+function calculateEWMA(hits, alpha) {
+    if(!hits || hits.length === 0) return 0.5;
+    alpha = alpha || B_RECENT_EWMA_ALPHA;
+    let value = hits[0];
+    for(let i = 1; i < hits.length; i++) {
+        value = alpha * hits[i] + (1.0 - alpha) * value;
+    }
+    return value;
+}
 
 // ============================================================
 // 二、基础函数
@@ -333,7 +514,7 @@ function judgeType(h) {
     return best[0];
 }
 
-function modelAWindow(h,w) {
+function modelAWindow(h,w, weight) {
     const r = recent(h,w);
     if(!r.length) return {score:0.5, pBig:0.5, reliability:0};
     const p = pBig(h,w);
@@ -344,7 +525,7 @@ function modelAWindow(h,w) {
     let cs = 1;
     for(let i = r.length-2; i >= 0; i--) { if(isBig(r[i].sum) === lb) cs++; else break; }
     const streakSig = 0.5 + (lb ? 0.25 : -0.25) * Math.min(cs / 5, 1);
-    let score = p * 0.4 + trend * 0.3 + streakSig * 0.3;
+    let score = p * weight[0] + trend * weight[1] + streakSig * weight[2];
     if(cs >= A_REVERSAL_STREAK && cs < 6) {
         const adj = Math.min(0.03, 0.01 * (cs - A_REVERSAL_STREAK + 1));
         score += lb ? -adj : adj;
@@ -355,8 +536,31 @@ function modelAWindow(h,w) {
 }
 
 function predictA(h) {
+    // 获取当前时段
+    const now = new Date();
+    const hour = now.getHours();
+    const minute = now.getMinutes();
+    
+    // 维护时段暂停预测
+    if(isMaintenanceTime(hour, minute)) {
+        return {
+            prediction: null,
+            reason: "维护时段，暂停预测",
+            weightedProbability: {"大": 0.5, "小": 0.5},
+            type: "维护时段",
+            windows: {},
+            effs: {},
+            final_score: 0.5
+        };
+    }
+    
+    const slot = getTimeSlot(hour, minute);
+    
+    // 获取该时段的权重
+    const weight = modelAWeights.getWeight(slot, h);
+    
     const res = {};
-    A_WINDOWS.forEach(w => res[w] = modelAWindow(h,w));
+    A_WINDOWS.forEach(w => res[w] = modelAWindow(h,w, weight));
     let ws = 0, tw = 0;
     const effs = {};
     A_WINDOWS.forEach(w => {
@@ -370,6 +574,8 @@ function predictA(h) {
         prediction: fs >= 0.5 ? "大" : "小",
         weightedProbability: {"大": fs, "小": 1 - fs},
         type: judgeType(h),
+        slot: slot,
+        weight: weight,
         windows: res,
         effs: effs,
         final_score: fs
@@ -410,6 +616,9 @@ function seedBacktest(h, seed) {
     return {overall, recentRate: rr, stability, score, hits, details, max_loss:m, lossPen:lossPen};
 }
 
+// ============================================================
+// 【修改】selectSeed - 增加 EWMA 二次筛选权重
+// ============================================================
 function selectSeed(h) {
     if(h.length < 50) return {error: 1};
     let bs = -1, bseed = null, bd = null;
@@ -438,13 +647,67 @@ function selectSeed(h) {
         if(d.score > bs) { bs = d.score; bseed = s; bd = d; }
         refineResult.push({seed:s, score:d.score, overall:d.overall, recent:d.recentRate});
     }
+    
+    // ============================================================
+    // 【修改】合并两轮结果，使用 EWMA 二次筛选
+    // ============================================================
+    const merged = {};
+    coarseResult.forEach(item => { merged[item.seed] = item; });
+    refineResult.forEach(item => { merged[item.seed] = item; });
+    
+    const ranked = Object.values(merged);
+    if(!ranked.length) return {error: 1};
+    
+    ranked.sort((a,b) => b.score - a.score);
+    
+    const pool = ranked.slice(0, Math.min(50, ranked.length));
+    
+    // ============================================================
+    // 【新增】二次筛选排序(加入 EWMA 权重)
+    // ============================================================
+    const B_EWMA_SECONDARY_WEIGHT = 0.10;
+    
+    function candidateKey(item) {
+        // 重新计算 detail
+        const detail = seedBacktest(h, item.seed);
+        if(detail.error) return item.score * 0.50;
+        
+        const consistency = 1.0 - Math.min(Math.abs(detail.overall - detail.recentRate), 1.0);
+        const recentBlock = detail.stability || 0.5;
+        
+        // 计算 EWMA
+        const hits = detail.hits || [];
+        let ewma = 0.5;
+        if(hits.length > 0) {
+            let val = hits[0];
+            for(let i = 1; i < hits.length; i++) {
+                val = B_RECENT_EWMA_ALPHA * hits[i] + (1.0 - B_RECENT_EWMA_ALPHA) * val;
+            }
+            ewma = val;
+        }
+        
+        return (
+            detail.score * 0.50 +
+            detail.stability * 0.20 +
+            recentBlock * 0.10 +
+            consistency * 0.10 +
+            ewma * B_EWMA_SECONDARY_WEIGHT
+        );
+    }
+    
+    pool.sort((a,b) => candidateKey(b) - candidateKey(a));
+    
+    const finalCandidates = pool.slice(0, Math.min(7, pool.length));
+    const bestItem = finalCandidates[0];
+    const bestDetail = seedBacktest(h, bestItem.seed);
+    
     return {
-        bestSeed: bseed,
-        score: bs,
-        detail: bd,
+        bestSeed: bestItem.seed,
+        score: bestItem.score,
+        detail: bestDetail,
         coarseSeeds: coarseResult.slice(0, 20),
         refineSeeds: refineResult.slice(0, 20),
-        topScore: bs
+        topScore: bestItem.score
     };
 }
 
@@ -660,27 +923,34 @@ function verifyOne() {
 }
 
 // ============================================================
-// 【新增1】补录缺失的预测(解决跳期断更问题)
+// 【新增6】补录缺失的预测(解决跳期断更问题) - 增强版
 // ============================================================
 function backfillPredictions() {
     if(historyData.length < 10) return;
     
     let backfillCount = 0;
     
-    // 从旧到新遍历
-    for(let i = historyData.length - 2; i >= 0; i--) {
-        const h = historyData[i];
-        const target = parseInt(h.nbr) + 1;
+    // 获取所有已开奖的期号
+    const openedPeriods = new Set(historyData.map(h => parseInt(h.nbr)));
+    
+    // 获取所有已有预测的期号
+    const predictedTargets = new Set(session.records.map(r => r.target));
+    
+    // 遍历所有已开奖的期号，检查是否有对应的预测
+    for(const period of openedPeriods) {
+        const target = period + 1;
         
-        // 检查是否已有预测记录
-        const exists = session.records.some(r => r.target === target);
-        if(exists) continue;
+        // 如果这个目标期已经有预测了，跳过
+        if(predictedTargets.has(target)) continue;
         
-        // 只用 target 期之前的数据
+        // 检查这个目标期是否在历史数据中(已开奖)
+        const targetData = historyData.find(h => parseInt(h.nbr) === target);
+        if(!targetData) continue;
+        
+        // 用目标期之前的数据补录
         const tempHistory = historyData.filter(p => parseInt(p.nbr) < target);
         if(tempHistory.length < 10) continue;
         
-        // 用当时的数据计算预测
         const resA = predictA(tempHistory);
         let resB = {pOdd: 0.5, prediction: "--", seed: null, groups: [], detail: null, error: 1};
         if(tempHistory.length >= 50) {
@@ -694,14 +964,31 @@ function backfillPredictions() {
                 predA: resA.prediction,
                 predB: resB.prediction,
                 killed: kill.killedGroup,
-                status: "待验证"  // 标记为待验证
+                status: "已验证"
             });
+            // 直接累加统计
+            const act = targetData;
+            if(resA.prediction === act.type[0]) session.aCorrect++;
+            else session.aWrong++;
+            if(resB.prediction === act.type[1]) session.bCorrect++;
+            else session.bWrong++;
+            if(act.type !== kill.killedGroup) session.fCorrect++;
+            else session.fWrong++;
+            
             backfillCount++;
-            logMsg("📝 补录预测: 第" + target + "期 → 杀" + kill.killedGroup);
+            logMsg("📝 补录预测: 第" + target + "期 → 杀" + kill.killedGroup + " (已开奖，直接验证)");
         }
     }
     
     if(backfillCount > 0) {
+        // 检查是否达到100期自动清零
+        const verifiedCount = session.aCorrect + session.aWrong;
+        if(verifiedCount >= MAX_VERIFIED_RECORDS) {
+            session.aCorrect = 0; session.aWrong = 0;
+            session.bCorrect = 0; session.bWrong = 0;
+            session.fCorrect = 0; session.fWrong = 0;
+            logMsg("🔄 补录后达100期，回测统计自动清零");
+        }
         persistAll();
         logMsg("📦 补录完成，共补录 " + backfillCount + " 期预测");
     }
@@ -725,11 +1012,28 @@ function checkAutoReset() {
 // ============================================================
 function renderProcessA(resA) {
     const container = document.getElementById("process-a-content");
-    if(!resA || !resA.windows) {
+    if(!resA || !resA.windows || Object.keys(resA.windows).length === 0) {
         container.innerHTML = '<div class="process-glass"><div class="step-content"><span style="color:#5a6f8a;">⏳ 等待数据...</span></div></div>';
         return;
     }
+    
+    // 如果是维护时段
+    if(resA.prediction === null) {
+        container.innerHTML = '<div class="process-glass"><div class="step-content"><span style="color:#5a6f8a;">⏳ ' + (resA.reason || '维护时段，暂停预测') + '</span></div></div>';
+        return;
+    }
+    
     let html = '<div class="process-glass">';
+
+    // ===== 步骤0：当前时段和权重 =====
+    html += '<div class="process-step">';
+    html += '<div class="step-number">0</div>';
+    html += '<div class="step-content">';
+    html += '<div class="step-title">🕐 时段权重</div>';
+    html += '<div class="step-detail">';
+    html += '<span class="process-tag purple">时段</span> ' + (resA.slot || '--') + ' ';
+    html += '｜ <span class="process-tag blue">权重</span> (P大×' + (resA.weight ? resA.weight[0].toFixed(2) : '--') + ' + 趋势×' + (resA.weight ? resA.weight[1].toFixed(2) : '--') + ' + 连续×' + (resA.weight ? resA.weight[2].toFixed(2) : '--') + ')';
+    html += '</div></div></div>';
 
     // ===== 步骤1：各窗口基础概率 =====
     html += '<div class="process-step">';
@@ -787,7 +1091,7 @@ function renderProcessA(resA) {
     html += '<div class="process-step">';
     html += '<div class="step-number">4</div>';
     html += '<div class="step-content">';
-    html += '<div class="step-title">⚖️ 各窗口综合得分 (P大×40% + 趋势×30% + 连续×30%)</div>';
+    html += '<div class="step-title">⚖️ 各窗口综合得分 (P大×w1 + 趋势×w2 + 连续×w3)</div>';
     html += '<div class="step-detail">';
     html += '<div class="process-grid">';
     A_WINDOWS.forEach(w => {
@@ -938,9 +1242,9 @@ function updateUI() {
     document.getElementById("prev-open").textContent = latest.number + "=" + latest.sum + "(" + latest.type + ")";
 
     const resA = predictA(historyData);
-    document.getElementById("model-a").textContent = resA.prediction;
-    document.getElementById("a-prob").textContent = "大 " + (resA.weightedProbability["大"] * 100).toFixed(1) + "% / 小 " + (resA.weightedProbability["小"] * 100).toFixed(1) + "%";
-    document.getElementById("a-type").textContent = resA.type;
+    document.getElementById("model-a").textContent = resA.prediction !== null ? resA.prediction : "维护中";
+    document.getElementById("a-prob").textContent = resA.prediction !== null ? ("大 " + (resA.weightedProbability["大"] * 100).toFixed(1) + "% / 小 " + (resA.weightedProbability["小"] * 100).toFixed(1) + "%") : "暂停预测";
+    document.getElementById("a-type").textContent = resA.type || "--";
 
     renderProcessA(resA);
 
@@ -1047,13 +1351,13 @@ async function pull() {
         historyData = parsed;
         logMsg("✅ 实拉 " + historyData.length + " 期，最新期 " + historyData[historyData.length - 1].nbr);
         
-        // 【修改2】验证已有预测
+        // 验证已有预测
         while(verifyOne()) {}
         
-        // 【修改2】补录缺失的预测(解决跳期断更问题)
+        // 补录缺失的预测(解决跳期断更问题)
         backfillPredictions();
         
-        // 【修改6】再次验证(补录的预测可能已经开奖)
+        // 再次验证(补录的预测可能已经开奖)
         while(verifyOne()) {}
         
         if(checkAutoReset()) { updateUI(); }
