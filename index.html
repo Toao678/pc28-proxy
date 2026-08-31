@@ -277,6 +277,27 @@ const TOOL = {
 };
 
 // ============================================================
+// 新增辅助函数
+// ============================================================
+function calcTrendScore(h, period = 8) {
+    const recent = h.slice(-period);
+    let score = 0;
+    for (let i = 1; i < recent.length; i++) {
+        const prev = recent[i - 1].sum % 2;
+        const curr = recent[i].sum % 2;
+        if (curr === prev) score += 1;
+        else score -= 0.5;
+    }
+    return score / (period - 1);
+}
+
+function calcConfidence(votes, totalWeight) {
+    if (totalWeight <= 0) return 0;
+    const maxProb = Math.max(votes['单'], votes['双']) / totalWeight;
+    return Math.max(0, Math.min(1, (maxProb - 0.55) * 2));
+}
+
+// ============================================================
 // 【v13 增强】维护时段判断(夏令时 19:00-19:30)
 // ============================================================
 function isMaintenanceTime() {
@@ -543,11 +564,11 @@ function getTimeSlot(hour, minute) {
 }
 
 // ============================================================
-// 模型A(增强版：混合集成)
+// 模型A(增强版：混合集成 + 趋势置信度修正)
 // ============================================================
 function predictA(h) {
     if (isMaintenanceTime()) {
-        return {prediction:null,reason:"维护",weightedProbability:{"大":0.5,"小":0.5},type:"维护",final_score:0.5};
+        return {prediction:null,reason:"维护",weightedProbability:{"大":0.5,"小":0.5},type:"维护",final_score:0.5,confidence:0};
     }
 
     // ---- 模型1：模式匹配(3,5,7,10期，允许1位容错) ----
@@ -564,12 +585,15 @@ function predictA(h) {
         }
     }
     const pmProb = pmWeight>0 ? {大:pmVotes['大']/pmWeight, 小:pmVotes['小']/pmWeight} : null;
+    const pmConf = pmWeight>0 ? calcConfidence({单:pmVotes['大'], 双:pmVotes['小']}, pmWeight) : 0;
 
     // ---- 模型2：马尔可夫链 ----
     const mcProb = TOOL.markovChain(h, 2, 'bs');
+    const mcConf = mcProb ? 0.6 : 0; // 简单置信度估算
 
     // ---- 模型3：近期频率(自适应15期) ----
     const freqProb = TOOL.freqBased(h, 'bs', 10, 20);
+    const freqConf = 0.5;
 
     // ---- 集成加权(动态调整权重) ----
     const verified = session.records.filter(r=>r.status==="已验证");
@@ -580,12 +604,8 @@ function predictA(h) {
         for (let r of recent) {
             const tgt = historyData.find(h=>parseInt(h.nbr)===r.target);
             if(!tgt) continue;
-            // 模拟各模型对该期的预测(简化：用当前模型重新预测历史期，近似)
-            // 注意：这里仅做演示，实际应存储各模型预测结果。我们使用简单方法：如果predA存在，则视为模式匹配结果(近似)
             if(r.predA && tgt.type[0]===r.predA) pmCorr++;
-            // 马尔可夫和频率无法回溯，暂不计算
         }
-        // 根据近期准确率调整权重(简化)
         const pmAcc = recent.length>0 ? pmCorr/recent.length : 0.5;
         wPM = Math.max(0.2, Math.min(0.8, pmAcc*1.5));
         wMC = 0.4*(1-wPM);
@@ -614,9 +634,25 @@ function predictA(h) {
         finalProb = {大:0.5,小:0.5};
     }
 
-    // 自适应阈值：根据近期大小分布微调
+    // ---- 趋势得分修正 ----
+    const trend = calcTrendScore(h, 8);
+    if (Math.abs(trend) > 0.3) {
+        const delta = trend * 0.08;
+        finalProb['大'] = Math.max(0.05, Math.min(0.95, finalProb['大'] + delta));
+        finalProb['小'] = 1 - finalProb['大'];
+    }
+
+    // ---- 置信度修正 ----
+    const conf = pmConf * 0.5 + mcConf * 0.3 + freqConf * 0.2; // 综合置信度
+    if (conf < 0.3) {
+        const shrink = (1 - conf) * 0.2;
+        finalProb['大'] = 0.5 + (finalProb['大'] - 0.5) * (1 - shrink);
+        finalProb['小'] = 1 - finalProb['大'];
+    }
+
+    // 自适应阈值
     const recentBigRate = h.slice(-30).filter(x=>isBig(x.sum)).length / Math.min(30,h.length);
-    const threshold = 0.498 + (recentBigRate-0.497)*0.2; // 动态偏移
+    const threshold = 0.498 + (recentBigRate-0.497)*0.2;
     const prediction = finalProb['大'] >= threshold ? '大' : '小';
 
     return {
@@ -626,8 +662,9 @@ function predictA(h) {
         slot: "全时段",
         weight: [wPM,wMC,wFreq],
         windows: {模式匹配:pmProb?.大, 马尔可夫:mcProb?.大, 频率:freqProb?.大},
-        effs: {权重: `${wPM.toFixed(2)}/${wMC.toFixed(2)}/${wFreq.toFixed(2)}` },
-        final_score: finalProb['大']
+        effs: {权重: `${wPM.toFixed(2)}/${wMC.toFixed(2)}/${wFreq.toFixed(2)}`, 趋势: trend.toFixed(3), 置信度: conf.toFixed(3) },
+        final_score: finalProb['大'],
+        confidence: conf
     };
 }
 
@@ -1091,61 +1128,99 @@ function getConfidenceDiscount() {
 }
 
 // ============================================================
-// 模型B(修复版：补齐返回字段 + 冷启动状态)
+// 模型B(增强版：混合集成 + 趋势置信度修正)
 // ============================================================
 function predictB(h) {
     if (isMaintenanceTime()) {
-        return {
-            prediction: null,
-            reason: "维护时段",
-            weightedProbability: {"单":0.5,"双":0.5},
-            type:"维护",
-            seed: "--",
-            hitRate: "--",
-            groups: [],
-            detail: null,
-            score: 0,
-            coarseSeeds: [],
-            refineSeeds: [],
-            topScore: 0,
-            groupPrecision: {},
-            groupConfidence: {},
-            groupExcludedRisk: {},
-            groupWeights: {}
-        };
+        return {prediction:null,reason:"维护",weightedProbability:{"单":0.5,"双":0.5},type:"维护",confidence:0,seed:"--",hitRate:"--"};
     }
-    
-    const scales = [3,5,7,10];
-    let votes = {单:0, 双:0};
-    let totalWeight = 0;
-    
-    for (let len of scales) {
-        const result = TOOL.patternMatch(h, len, 'oe', 0);
-        if (result && result.total >= 2) {
-            const stats = result.nextStats;
-            const oddCount = stats['单'] || 0;
-            const evenCount = stats['双'] || 0;
-            const total = oddCount + evenCount;
-            if (total > 0) {
-                const weight = total * len;
-                votes['单'] += (oddCount / total) * weight;
-                votes['双'] += (evenCount / total) * weight;
-                totalWeight += weight;
+
+    let pmVotes = {单:0,双:0}, pmWeight = 0;
+    for (let len of [3,5,7,10]) {
+        const res = TOOL.patternMatch(h, len, 'oe', 1);
+        if (res && res.total>=3) {
+            const tot = (res.nextStats['单']||0)+(res.nextStats['双']||0);
+            if (tot>0) {
+                pmVotes['单'] += (res.nextStats['单']||0)/tot * tot*len;
+                pmVotes['双'] += (res.nextStats['双']||0)/tot * tot*len;
+                pmWeight += tot*len;
             }
         }
     }
-    
-    let seedDisplay = "--";
-    let hitRateDisplay = "--";
+    const pmProb = pmWeight>0 ? {单:pmVotes['单']/pmWeight, 双:pmVotes['双']/pmWeight} : null;
+    const pmConf = pmWeight>0 ? calcConfidence({单:pmVotes['单'], 双:pmVotes['双']}, pmWeight) : 0;
+
+    const mcProb = TOOL.markovChain(h, 2, 'oe');
+    const mcConf = mcProb ? 0.6 : 0;
+    const freqProb = TOOL.freqBased(h, 'oe', 10, 20);
+    const freqConf = 0.5;
+
+    // 简化权重
+    const verified = session.records.filter(r=>r.status==="已验证");
+    let wPM=0.5, wMC=0.3, wFreq=0.2;
+    if (verified.length>=10) {
+        const recent = verified.slice(-20);
+        let pmCorr=0;
+        for (let r of recent) {
+            const tgt = historyData.find(h=>parseInt(h.nbr)===r.target);
+            if(!tgt) continue;
+            if(r.predB && tgt.type[1]===r.predB) pmCorr++;
+        }
+        const pmAcc = recent.length>0 ? pmCorr/recent.length : 0.5;
+        wPM = Math.max(0.2, Math.min(0.8, pmAcc*1.5));
+        wMC = 0.4*(1-wPM);
+        wFreq = 0.6*(1-wPM);
+    }
+
+    let finalProb = {单:0,双:0};
+    const models = [
+        {prob:pmProb, weight:wPM},
+        {prob:mcProb, weight:wMC},
+        {prob:freqProb, weight:wFreq}
+    ];
+    let totalW = 0;
+    for (let m of models) {
+        if (m.prob) {
+            finalProb['单'] += (m.prob['单']||0)*m.weight;
+            finalProb['双'] += (m.prob['双']||0)*m.weight;
+            totalW += m.weight;
+        }
+    }
+    if (totalW>0) {
+        finalProb['单'] /= totalW;
+        finalProb['双'] /= totalW;
+    } else {
+        finalProb = {单:0.5,双:0.5};
+    }
+
+    // ---- 趋势修正 ----
+    const trend = calcTrendScore(h, 8);
+    if (Math.abs(trend) > 0.3) {
+        const delta = trend * 0.08;
+        finalProb['单'] = Math.max(0.05, Math.min(0.95, finalProb['单'] + delta));
+        finalProb['双'] = 1 - finalProb['单'];
+    }
+
+    // ---- 置信度修正 ----
+    const conf = pmConf * 0.5 + mcConf * 0.3 + freqConf * 0.2;
+    if (conf < 0.3) {
+        const shrink = (1 - conf) * 0.2;
+        finalProb['单'] = 0.5 + (finalProb['单'] - 0.5) * (1 - shrink);
+        finalProb['双'] = 1 - finalProb['单'];
+    }
+
+    const recentOddRate = h.slice(-30).filter(x=>isOdd(x.sum)).length / Math.min(30,h.length);
+    const threshold = 0.492 + (recentOddRate-0.489)*0.15;
+    const prediction = finalProb['单'] >= threshold ? '单' : '双';
+
+    // 冷启动状态
+    let seedDisplay = "--", hitRateDisplay = "--";
     const verifiedCount = session.records.filter(r => r.status === "已验证").length;
-    
-    // 冷启动阶段赋值
     if (verifiedCount < 50) {
         seedDisplay = "冷启动";
         hitRateDisplay = "收集中";
     } else {
         seedDisplay = "活跃";
-        // 简单计算最近准确率
         const recent = session.records.filter(r => r.status === "已验证").slice(-30);
         let correct = 0;
         for (let r of recent) {
@@ -1156,37 +1231,16 @@ function predictB(h) {
         hitRateDisplay = (acc * 100).toFixed(1) + "%";
     }
 
-    if (totalWeight < 1) {
-        const recent = h.slice(-10);
-        const oddRate = recent.filter(x => isOdd(x.sum)).length / 10;
-        const pred = oddRate >= 0.475 ? '单' : '双';
-        return {
-            prediction: pred,
-            weightedProbability: {单: oddRate, 双: 1-oddRate},
-            type: "回退EMA",
-            seed: seedDisplay,
-            hitRate: hitRateDisplay,
-            groups: [],
-            detail: null,
-            score: 0,
-            coarseSeeds: [],
-            refineSeeds: [],
-            topScore: 0,
-            groupPrecision: {},
-            groupConfidence: {},
-            groupExcludedRisk: {},
-            groupWeights: {}
-        };
-    }
-    
-    const probOdd = votes['单'] / totalWeight;
-    const probEven = votes['双'] / totalWeight;
-    const prediction = probOdd >= 0.488 ? '单' : '双';
-    
     return {
         prediction,
-        weightedProbability: {单: probOdd, 双: probEven},
-        type: "模式匹配",
+        weightedProbability: finalProb,
+        type: "混合集成",
+        slot: "全时段",
+        weight: [wPM,wMC,wFreq],
+        windows: {模式匹配:pmProb?.单, 马尔可夫:mcProb?.单, 频率:freqProb?.单},
+        effs: {权重: `${wPM.toFixed(2)}/${wMC.toFixed(2)}/${wFreq.toFixed(2)}`, 趋势: trend.toFixed(3), 置信度: conf.toFixed(3) },
+        final_score: finalProb['单'],
+        confidence: conf,
         seed: seedDisplay,
         hitRate: hitRateDisplay,
         groups: [],
@@ -1352,7 +1406,7 @@ function comboScoresWithStacking(a, b) {
 // ============================================================
 // 组合评分与杀组
 // ============================================================
-// 动态组合权重(增加低准确率惩罚和历史记忆)
+// 动态组合权重(增加模型置信度自适应)
 function calcDynamicComboAlpha() {
     const verified = session.records.filter(r=>r.status==="已验证");
     if (verified.length===0) return 0.5;
@@ -1366,11 +1420,20 @@ function calcDynamicComboAlpha() {
     }
     const accA = recent.length>0 ? corrA/recent.length : 0.5;
     const accB = recent.length>0 ? corrB/recent.length : 0.5;
-    // 如果某一模型准确率低于40%，大幅降低其权重
-    let alpha = accA / (accA+accB+0.001);
-    if (accA < 0.40) alpha = 0.25;
-    if (accB < 0.40) alpha = 0.75;
+
+    // 获取当前模型置信度(由 updateUI 设置)
+    const confA = window._confA || 0.5;
+    const confB = window._confB || 0.5;
+
+    // 综合得分 = 准确率 * 置信度
+    const scoreA = accA * (0.5 + 0.5 * confA);
+    const scoreB = accB * (0.5 + 0.5 * confB);
+
+    let alpha = scoreA / (scoreA + scoreB + 0.001);
+    if (scoreA < 0.2) alpha = 0.25;
+    if (scoreB < 0.2) alpha = 0.75;
     alpha = Math.max(0.2, Math.min(0.8, alpha));
+
     // 指数平滑
     if (typeof window._smoothedAlpha === 'undefined') window._smoothedAlpha = alpha;
     else window._smoothedAlpha = 0.85*window._smoothedAlpha + 0.15*alpha;
@@ -1871,6 +1934,9 @@ function updateUI() {
     } else {
         resA = predictA(historyData);
         resB = predictB(historyData);
+        // 保存置信度供组合权重使用
+        window._confA = resA.confidence || 0.5;
+        window._confB = resB.confidence || 0.5;
         lastValidPrediction = { resA, resB, killResult: null };
     }
 
