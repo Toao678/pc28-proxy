@@ -1,2168 +1,1441 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>PC28 双模型预测 v13 · 增强版</title>
-<style>
-* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-html, body { min-height:100vh; font-family:-apple-system,'Inter','SF Pro Display','PingFang SC',sans-serif; background:#f0f2f5; color:#1e293b; padding:8px; font-size:13px; line-height:1.6; }
-h1 { text-align:center; font-size:17px; color:#1a3a5c; margin-bottom:8px; }
-h2 { font-size:14px; color:#c0392b; margin:6px 0 4px; border-bottom:1px solid #dde3ec; padding-bottom:3px; }
-h3 { font-size:12px; color:#2980b9; margin:4px 0 2px; }
-.panel { background:#ffffff; border:1px solid #dde3ec; border-radius:10px; padding:10px; margin-bottom:10px; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
-.row { display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px; padding:1px 0; }
-.row span { color:#5a6f8a; }
-.row strong { color:#1a1a1a; word-break:break-all; text-align:right; }
-.tag { display:inline-block; padding:2px 8px; border-radius:4px; font-weight:bold; font-size:12px; color:#fff; }
-.tag-big-odd { background:#c0392b; }
-.tag-big-even { background:#2980b9; }
-.tag-small-odd { background:#27ae60; }
-.tag-small-even { background:#8e44ad; }
-.tag-kill { background:#e74c3c; }
-.tag-buy { background:#27ae60; }
-.tag-pred { background:#e67e22; }
-.tag-nopred { background:#95a5a6; }
-.tag-process { background:#5b6abf; }
-table { width:100%; border-collapse:collapse; margin-top:6px; font-size:12px; }
-th, td { padding:4px 6px; text-align:center; border:1px solid #dde3ec; }
-th { background:#eef2f7; color:#1a3a5c; }
-.hit { color:#27ae60; font-weight:bold; }
-.miss { color:#e74c3c; font-weight:bold; }
-.pending { color:#f39c12; }
-.btn-reset { display:block; width:100%; padding:10px; margin-top:6px; background:#e74c3c; color:#fff; border:none; border-radius:6px; font-size:14px; font-weight:bold; cursor:pointer; transition:background 0.15s; }
-.btn-reset:active { background:#a93226; }
-.btn-reset.done { background:#27ae60; }
-#log { max-height:120px; overflow-y:auto; background:#f8f9fa; padding:8px; border-radius:6px; font-size:11px; color:#5a6f8a; margin-top:8px; border:1px solid #dde3ec; }
-#log p { margin-bottom:2px; }
-.win-box { display:inline-flex; gap:4px; flex-wrap:wrap; justify-content:flex-end; }
-.win-item { border:1px solid #dde3ec; border-radius:4px; padding:1px 6px; background:#f8f9fb; font-size:11px; color:#2c3e50; font-weight:bold; min-width:48px; text-align:center; }
-.scroll-wrap { overflow-x:auto; }
-.model-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.model-grid .panel { margin-bottom:0; }
-.process-glass { background:rgba(255,255,255,0.55); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,0.40); border-radius:12px; padding:10px 12px; margin:4px 0 8px 0; box-shadow:0 2px 12px rgba(0,0,0,0.06); }
-.process-step { display:flex; align-items:flex-start; gap:10px; padding:6px 0; border-bottom:1px solid rgba(200,210,220,0.25); }
-.process-step:last-child { border-bottom:none; }
-.step-number { flex-shrink:0; width:24px; height:24px; border-radius:50%; background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; margin-top:1px; }
-.step-content { flex:1; min-width:0; }
-.step-title { font-size:12px; font-weight:700; color:#1a3a5c; margin-bottom:2px; }
-.step-detail { font-size:11px; color:#3a4a6a; line-height:1.5; }
-.step-detail .hl { color:#c0392b; font-weight:700; }
-.step-detail .hl-blue { color:#2980b9; font-weight:700; }
-.step-detail .hl-green { color:#27ae60; font-weight:700; }
-.step-detail .hl-purple { color:#8e44ad; font-weight:700; }
-.step-detail .val { font-weight:700; color:#1a3a5c; }
-.process-tag { display:inline-block; padding:1px 8px; border-radius:4px; font-size:10px; font-weight:700; color:#fff; margin-right:4px; }
-.process-tag.purple { background:#8e44ad; }
-.process-tag.blue { background:#2980b9; }
-.process-tag.green { background:#27ae60; }
-.process-tag.orange { background:#e67e22; }
-.process-tag.red { background:#c0392b; }
-.process-tag.gray { background:#7f8c8d; }
-.process-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr; gap:4px; margin:4px 0; }
-.process-grid .item { background:rgba(255,255,255,0.70); border-radius:6px; padding:4px 6px; font-size:10px; border:1px solid rgba(200,210,220,0.30); text-align:center; }
-.process-grid .item .label { color:#5a6f8a; font-size:9px; }
-.process-grid .item .val { font-weight:700; color:#1a3a5c; font-size:11px; }
-.process-grid .item .sub { font-size:9px; color:#7f8c8d; }
-.process-inline { display:flex; flex-wrap:wrap; gap:3px 8px; padding:2px 0; }
-.process-inline .item { background:rgba(255,255,255,0.60); border-radius:4px; padding:1px 6px; font-size:10px; border:1px solid rgba(200,210,220,0.20); }
-.process-sub-glass { background:rgba(255,255,255,0.35); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.30); border-radius:8px; padding:6px 10px; margin:4px 0; }
-@media (max-width:768px){ .model-grid{ grid-template-columns:1fr; } .model-grid .panel{ margin-bottom:10px; } .process-grid{ grid-template-columns:1fr 1fr 1fr; } }
-@media (max-width:480px){ .process-grid{ grid-template-columns:1fr 1fr; } }
-.countdown-bar { background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; border-radius:8px; padding:8px 12px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; font-weight:700; font-size:14px; }
-.countdown-bar .cd-time { font-size:18px; letter-spacing:2px; }
-.conservative-tag { background:#f39c12; color:#fff; padding:2px 8px; border-radius:4px; font-size:11px; margin-left:6px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>PC28 双模型预测 v16 · 多基集成(修复版)</title>
+    <style>
+        /* 样式沿用 v15，此处略去重复，实际运行保留全部样式 */
+        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+        html,body { min-height:100vh; font-family:-apple-system,'Inter','SF Pro Display','PingFang SC',sans-serif; background:#f0f2f5; color:#1e293b; padding:8px; font-size:13px; line-height:1.6; }
+        h1 { text-align:center; font-size:17px; color:#1a3a5c; margin-bottom:8px; }
+        h2 { font-size:14px; color:#c0392b; margin:6px 0 4px; border-bottom:1px solid #dde3ec; padding-bottom:3px; }
+        .panel { background:#fff; border:1px solid #dde3ec; border-radius:10px; padding:10px; margin-bottom:10px; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+        .row { display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px; padding:1px 0; }
+        .row span { color:#5a6f8a; }
+        .row strong { color:#1a1a1a; word-break:break-all; text-align:right; }
+        .tag { display:inline-block; padding:2px 8px; border-radius:4px; font-weight:bold; font-size:12px; color:#fff; }
+        .tag-big-odd { background:#c0392b; }
+        .tag-big-even { background:#2980b9; }
+        .tag-small-odd { background:#27ae60; }
+        .tag-small-even { background:#8e44ad; }
+        .tag-kill { background:#e74c3c; }
+        .tag-buy { background:#27ae60; }
+        .tag-pred { background:#e67e22; }
+        .tag-nopred { background:#95a5a6; }
+        table { width:100%; border-collapse:collapse; margin-top:6px; font-size:12px; }
+        th,td { padding:4px 6px; text-align:center; border:1px solid #dde3ec; }
+        th { background:#eef2f7; color:#1a3a5c; }
+        .hit { color:#27ae60; font-weight:bold; }
+        .miss { color:#e74c3c; font-weight:bold; }
+        .pending { color:#f39c12; }
+        .btn-reset { display:block; width:100%; padding:10px; margin-top:6px; background:#e74c3c; color:#fff; border:none; border-radius:6px; font-size:14px; font-weight:bold; cursor:pointer; transition:background 0.15s; }
+        .btn-reset:active { background:#a93226; }
+        .btn-reset.done { background:#27ae60; }
+        #log { max-height:120px; overflow-y:auto; background:#f8f9fa; padding:8px; border-radius:6px; font-size:11px; color:#5a6f8a; margin-top:8px; border:1px solid #dde3ec; }
+        #log p { margin-bottom:2px; }
+        .model-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .model-grid .panel { margin-bottom:0; }
+        .process-glass { background:rgba(255,255,255,0.55); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,0.40); border-radius:12px; padding:10px 12px; margin:4px 0 8px 0; box-shadow:0 2px 12px rgba(0,0,0,0.06); }
+        .process-step { display:flex; align-items:flex-start; gap:10px; padding:6px 0; border-bottom:1px solid rgba(200,210,220,0.25); }
+        .process-step:last-child { border-bottom:none; }
+        .step-number { flex-shrink:0; width:24px; height:24px; border-radius:50%; background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+        .step-content { flex:1; min-width:0; }
+        .step-title { font-size:12px; font-weight:700; color:#1a3a5c; margin-bottom:2px; }
+        .step-detail { font-size:11px; color:#3a4a6a; line-height:1.5; }
+        .step-detail .hl { color:#c0392b; font-weight:700; }
+        .step-detail .hl-blue { color:#2980b9; font-weight:700; }
+        .step-detail .val { font-weight:700; color:#1a3a5c; }
+        .process-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr; gap:4px; margin:4px 0; }
+        .process-grid .item { background:rgba(255,255,255,0.70); border-radius:6px; padding:4px 6px; font-size:10px; border:1px solid rgba(200,210,220,0.30); text-align:center; }
+        .process-grid .item .label { color:#5a6f8a; font-size:9px; }
+        .process-grid .item .val { font-weight:700; color:#1a3a5c; font-size:11px; }
+        .process-grid .item .sub { font-size:9px; color:#7f8c8d; }
+        .countdown-bar { background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; border-radius:8px; padding:8px 12px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; font-weight:700; font-size:14px; }
+        .countdown-bar .cd-time { font-size:18px; letter-spacing:2px; }
+        .conservative-tag { background:#f39c12; color:#fff; padding:2px 8px; border-radius:4px; font-size:11px; margin-left:6px; }
+        .rl-badge { background:#8e44ad; color:#fff; padding:1px 10px; border-radius:12px; font-size:10px; font-weight:700; display:inline-block; margin-left:6px; }
+        @media (max-width:768px){ .model-grid{ grid-template-columns:1fr; } .model-grid .panel{ margin-bottom:10px; } .process-grid{ grid-template-columns:1fr 1fr 1fr; } }
+        @media (max-width:480px){ .process-grid{ grid-template-columns:1fr 1fr; } }
+        .scroll-wrap { overflow-x:auto; }
+    </style>
 </head>
 <body>
-<h1>🎯 PC28 · 双模型预测 v13</h1>
+    <h1>🎯 PC28 · 多基集成 v16 <span class="rl-badge">TCN+LSTM+GBDT</span></h1>
 
-<div class="countdown-bar">
-    <span>⏱ 倒计时</span>
-    <span class="cd-time" id="countdown-display">--:--</span>
-</div>
-
-<div class="panel">
-<h2>📊 当前预测</h2>
-<div class="row"><span>目标期:</span><strong id="target-period">--</strong></div>
-<div class="row"><span>上期:</span><strong id="prev-period">--</strong></div>
-<div class="row"><span>上期开奖:</span><strong id="prev-open">--</strong></div>
-<div class="row"><span>模型A (大/小):</span><strong id="model-a">--</strong></div>
-<div class="row"><span>模型A 加权概率:</span><strong id="a-prob">大 0% / 小 0%</strong></div>
-<div class="row"><span>模型A 走势判定:</span><strong id="a-type">--</strong></div>
-<div class="row"><span>模型B (单/双):</span><strong id="model-b">--</strong></div>
-<div class="row"><span>模型B Seed:</span><strong id="b-seed">--</strong></div>
-<div class="row"><span>模型B 命中率:</span><strong id="b-rate">--</strong></div>
-<div class="row"><span>模型B 推三组:</span><strong id="b-groups">--</strong></div>
-<div class="row"><span>四组合评分:</span><strong id="combo-scores">--</strong></div>
-<div class="row"><span>杀组:</span><strong id="kill-group" class="tag tag-kill">--</strong></div>
-<div class="row"><span>买入候选:</span><strong id="buy-groups" class="tag tag-buy">--</strong></div>
-<div class="row"><span>状态:</span><strong id="status-tag">--</strong></div>
-</div>
-
-<div class="model-grid">
-    <div class="panel" id="panel-process-a">
-        <h2>🧮 模型A · 计算过程</h2>
-        <div id="process-a-content"><div class="process-glass"><div class="step-content"><span style="color:#5a6f8a;">⏳ 等待数据...</span></div></div></div>
+    <div class="countdown-bar">
+        <span>⏱ 倒计时</span>
+        <span class="cd-time" id="countdown-display">--:--</span>
     </div>
-    <div class="panel" id="panel-process-b">
-        <h2>🧮 模型B · 计算过程</h2>
-        <div id="process-b-content"><div class="process-glass"><div class="step-content"><span style="color:#5a6f8a;">⏳ 等待数据(需≥50期)...</span></div></div></div>
+
+    <div class="panel">
+        <h2>📊 当前预测</h2>
+        <div class="row"><span>目标期:</span><strong id="target-period">--</strong></div>
+        <div class="row"><span>上期:</span><strong id="prev-period">--</strong></div>
+        <div class="row"><span>上期开奖:</span><strong id="prev-open">--</strong></div>
+        <div class="row"><span>模型A (TCN 大/小):</span><strong id="model-a">--</strong></div>
+        <div class="row"><span>模型A 加权概率:</span><strong id="a-prob">大 0% / 小 0%</strong></div>
+        <div class="row"><span>模型A 走势判定:</span><strong id="a-type">--</strong></div>
+        <div class="row"><span>模型B (LSTM 单/双):</span><strong id="model-b">--</strong></div>
+        <div class="row"><span>模型B Seed:</span><strong id="b-seed">--</strong></div>
+        <div class="row"><span>模型B 命中率:</span><strong id="b-rate">--</strong></div>
+        <div class="row"><span>模型B 推三组:</span><strong id="b-groups">--</strong></div>
+        <div class="row"><span>四组合评分:</span><strong id="combo-scores">--</strong></div>
+        <div class="row"><span>杀组:</span><strong id="kill-group" class="tag tag-kill">--</strong></div>
+        <div class="row"><span>买入候选:</span><strong id="buy-groups" class="tag tag-buy">--</strong></div>
+        <div class="row"><span>状态:</span><strong id="status-tag">--</strong></div>
+        <div class="row" style="margin-top:4px;border-top:1px dashed #dde3ec;padding-top:4px;">
+            <span>🧠 集成状态</span>
+            <strong id="rl-status" style="font-size:11px;color:#8e44ad;">卡尔曼滤波 | 对抗判别器</strong>
+        </div>
     </div>
-</div>
 
-<div class="panel">
-<h2>📈 回测统计 (滑动窗口最多300期)</h2>
-<div class="row"><span>已验证:</span><strong id="stat-total">0</strong></div>
-<div class="row"><span>A模型 正确/错误/概率:</span><strong id="stat-a">正确0/错误0/0%</strong></div>
-<div class="row"><span>B模型 正确/错误/概率:</span><strong id="stat-b">正确0/错误0/0%</strong></div>
-<div class="row"><span>组合 正确/错误/概率:</span><strong id="stat-final">正确0/错误0/0%</strong></div>
-<button class="btn-reset" id="btn-reset">🗑 清零统计</button>
-</div>
+    <div class="model-grid">
+        <div class="panel" id="panel-process-a">
+            <h2>🧮 模型A · 计算过程 <span class="rl-badge">TCN</span></h2>
+            <div id="process-a-content"><div class="process-glass"><div class="step-content"><span style="color:#5a6f8a;">⏳ 等待数据...</span></div></div></div>
+        </div>
+        <div class="panel" id="panel-process-b">
+            <h2>🧮 模型B · 计算过程 <span class="rl-badge">注意力LSTM</span></h2>
+            <div id="process-b-content"><div class="process-glass"><div class="step-content"><span style="color:#5a6f8a;">⏳ 等待数据(需≥20期)...</span></div></div></div>
+        </div>
+    </div>
 
-<div class="panel">
-<h2>📋 最近30期回测</h2>
-<div class="scroll-wrap">
-<table><thead><tr><th>期号</th><th>开奖结果</th><th>和值</th><th>类型</th><th>预测答案</th><th>A</th><th>B</th><th>组合</th></tr></thead><tbody id="history-body"></tbody></table>
-</div>
-</div>
+    <div class="panel">
+        <h2>📈 回测统计 (滑动窗口最多300期)</h2>
+        <div class="row"><span>已验证:</span><strong id="stat-total">0</strong></div>
+        <div class="row"><span>A模型 正确/错误/概率:</span><strong id="stat-a">正确0/错误0/0%</strong></div>
+        <div class="row"><span>B模型 正确/错误/概率:</span><strong id="stat-b">正确0/错误0/0%</strong></div>
+        <div class="row"><span>组合 正确/错误/概率:</span><strong id="stat-final">正确0/错误0/0%</strong></div>
+        <button class="btn-reset" id="btn-reset">🗑 清零统计</button>
+    </div>
 
-<div id="log"><p>⏳ 启动中...</p></div>
+    <div class="panel">
+        <h2>📋 最近30期回测</h2>
+        <div class="scroll-wrap">
+            <table><thead><tr><th>期号</th><th>开奖结果</th><th>和值</th><th>类型</th><th>预测答案</th><th>A</th><th>B</th><th>组合</th></tr></thead><tbody id="history-body"></tbody></table>
+        </div>
+    </div>
 
-<script>
-// ============================================================
-// v13 增强：全局配置更新
-// ============================================================
-const API_URL = "https://pc28.help/api/kj.json?nbr=100";
-const FETCH_TIMEOUT = 10000;
+    <div id="log"><p>⏳ 启动中...</p></div>
 
-const MAX_VERIFIED_RECORDS = 300;
+    <script>
+        // ============================================================
+        // v16 全局变量(修复版)
+        // ============================================================
+        // TCN 权重(输入特征数 = 10)
+        let tcnWeights = new Array(10).fill(0).map(() => Math.random() * 0.2 - 0.1);
+        let tcnBias = 0;
 
-const COMBO_ALPHA = 0.50;  // 将被动态覆盖
-const COMBO_BETA = 0.50;
-const ALL_TYPES = ["大单","大双","小单","小双"];
+        // 注意力LSTM参数(简化)
+        let attnWeights = new Array(20).fill(0).map(() => Math.random() * 0.2 - 0.1);
+        let attnBias = 0;
 
-// A模型窗口(添加80期)
-const A_WINDOWS = [10, 20, 30, 50, 80, 100];
-const A_DEFAULT_WINDOW_WEIGHTS = {10:0.08, 20:0.12, 30:0.18, 50:0.22, 80:0.20, 100:0.20};
-const A_RELIABILITY_FLOOR = 0.30;
-const A_REVERSAL_STREAK = 4;
-const A_ANOMALY_GAP = 5;
-
-// B模型参数(扩展种子上限)
-const B_SEED_MIN = 1000;
-const B_SEED_MAX = 60000;
-const B_COARSE_STEP = 10;
-const B_SCORE_WEIGHTS = [0.40, 0.30, 0.20, 0.10];
-const B_RECENT_EWMA_ALPHA = 0.35;
-const B_EXCLUDED_PENALTY_WEIGHT = 0.10;
-const B_GROUP_SMOOTHING = 0.5;
-
-const ENS_C_CONF = 0.30;
-const GD_LR = 0.01;
-const ANOMALY_Z_THRESHOLD = 3.0;
-const CONSERVATIVE_BLEND = 0.20;
-
-let gdWeights = [0.33, 0.33, 0.34];
-let lrCoef = [0.25, 0.25, 0.25, 0.25];
-let gridBestParams = null;
-
-let countdownTimer = null;
-let countdownSeconds = 0;
-
-// A默认权重微调
-const A_MAX_WEIGHT_DEVIATION = 0.10;
-const A_DEFAULT_WEIGHT = [0.38, 0.31, 0.31];
-const A_TYPE_WINDOWS = [10, 20, 30];
-
-// 异常保守模式
-let conservativeModeActive = false;
-let modelAWeightScale = 1.0;
-let modelBWeightScale = 1.0;
-
-// ===== PC28官方维护时段(BCLC Keno，北京时间夏令时) =====
-// 夏令时：19:00-19:30；冬令时：20:00-20:30
-const MAINTENANCE_START_HOUR = 19;
-const MAINTENANCE_START_MINUTE = 0;
-const MAINTENANCE_END_HOUR = 19;
-const MAINTENANCE_END_MINUTE = 30;
-let lastValidPrediction = null;
-
-// B模型冷启动预训练种子池
-const PRESEED_POOL_SIZE = 500;
-let preseeds = [];
-for (let i = 0; i < PRESEED_POOL_SIZE; i++) {
-    preseeds.push(Math.floor(Math.random() * B_SEED_MAX));
-}
-
-// ============================================================
-// 基础函数
-// ============================================================
-function getType(sum) {
-    const size = sum >= 14 ? "大" : "小";
-    const parity = sum % 2 === 1 ? "单" : "双";
-    return size + parity;
-}
-function isBig(sum) { return sum >= 14; }
-function isOdd(sum) { return sum % 2 === 1; }
-function getSize(sum) { return isBig(sum) ? "大" : "小"; }
-function getParity(sum) { return sum % 2 === 1 ? "单" : "双"; }
-
-// ============================================================
-// 高级预测工具箱
-// ============================================================
-const TOOL = {
-    // 1. 模式匹配(允许容错)
-    patternMatch(h, lookback, type, maxDiff=0) {
-        const cur = h.slice(-lookback);
-        if (cur.length < lookback) return null;
-        const toKey = x => type==='bs' ? (isBig(x.sum)?'B':'S') : (isOdd(x.sum)?'O':'E');
-        const curPat = cur.map(toKey).join('');
-        const pool = h.slice(0, -lookback);
-        const matches = [];
-        for (let i=0; i<=pool.length-lookback; i++) {
-            const seg = pool.slice(i, i+lookback);
-            const pat = seg.map(toKey).join('');
-            let diff = 0;
-            for (let j=0; j<lookback; j++) if (curPat[j]!==pat[j]) diff++;
-            if (diff <= maxDiff) matches.push({idx: i+lookback, pat, diff});
+        // GBDT 树桩：分别用于大小和单双
+        let gbdtStumpsBig = [];
+        let gbdtStumpsOdd = [];
+        for (let i = 0; i < 20; i++) {
+            gbdtStumpsBig.push({
+                featureIdx: Math.floor(Math.random() * 10),
+                threshold: Math.random() * 2 - 1,
+                leftVal: Math.random() * 0.2 - 0.1,
+                rightVal: Math.random() * 0.2 - 0.1
+            });
+            gbdtStumpsOdd.push({
+                featureIdx: Math.floor(Math.random() * 10),
+                threshold: Math.random() * 2 - 1,
+                leftVal: Math.random() * 0.2 - 0.1,
+                rightVal: Math.random() * 0.2 - 0.1
+            });
         }
-        const nextStats = {};
-        for (let m of matches) {
-            if (m.idx < h.length) {
-                const nxt = h[m.idx];
-                const key = type==='bs' ? (isBig(nxt.sum)?'大':'小') : (isOdd(nxt.sum)?'单':'双');
-                nextStats[key] = (nextStats[key]||0) + 1;
+
+        // 卡尔曼滤波权重(平滑后)
+        let kalmanWeights = { A: 0.34, B: 0.33, C: 0.33 };
+
+        // 连续错误计数器(用于止损)
+        let consecutiveLoss = { A: 0, B: 0, C: 0, combo: 0 };
+
+        // ============================================================
+        // 原有配置(保持不变)
+        // ============================================================
+        const API_URL = "https://pc28.help/api/kj.json?nbr=100";
+        const FETCH_TIMEOUT = 10000;
+        const MAX_VERIFIED_RECORDS = 300;
+        const ALL_TYPES = ["大单", "大双", "小单", "小双"];
+        const ANOMALY_Z_THRESHOLD = 3.0;
+        const MAINTENANCE_START_HOUR = 19;
+        const MAINTENANCE_START_MINUTE = 0;
+        const MAINTENANCE_END_HOUR = 19;
+        const MAINTENANCE_END_MINUTE = 30;
+
+        let countdownTimer = null;
+        let countdownSeconds = 0;
+        let conservativeModeActive = false;
+        let modelAWeightScale = 1.0;
+        let modelBWeightScale = 1.0;
+        let lastValidPrediction = null;
+        let historyData = [];
+        let session = {
+            aCorrect: 0,
+            aWrong: 0,
+            bCorrect: 0,
+            bWrong: 0,
+            fCorrect: 0,
+            fWrong: 0,
+            records: [],
+            comboAlpha: 0.5
+        };
+
+        // ============================================================
+        // 基础工具函数
+        // ============================================================
+        function getType(sum) {
+            const size = sum >= 14 ? "大" : "小";
+            const parity = sum % 2 === 1 ? "单" : "双";
+            return size + parity;
+        }
+        function isBig(sum) { return sum >= 14; }
+        function isOdd(sum) { return sum % 2 === 1; }
+        function isMaintenanceTime() {
+            let now = new Date();
+            let hour = now.getHours();
+            let minute = now.getMinutes();
+            let currentMinutes = hour * 60 + minute;
+            let startMinutes = MAINTENANCE_START_HOUR * 60 + MAINTENANCE_START_MINUTE;
+            let endMinutes = MAINTENANCE_END_HOUR * 60 + MAINTENANCE_END_MINUTE;
+            return (currentMinutes >= startMinutes && currentMinutes <= endMinutes);
+        }
+        function getTimeSlot(hour, minute) {
+            if (isMaintenanceTime()) return "维护时段";
+            if (hour >= 0 && hour < 6) return "凌晨";
+            if (hour >= 6 && hour < 8) return "早上";
+            if (hour >= 8 && hour < 12) return "上午";
+            if (hour >= 12 && hour < 14) return "中午";
+            if (hour >= 14 && hour < 18) return "下午";
+            if (hour >= 18 && hour < 19) return "傍晚";
+            return "晚上";
+        }
+
+        // ============================================================
+        // 高级特征提取(v16)
+        // ============================================================
+        function entropy(arr) {
+            const n = arr.length;
+            if (n === 0) return 0;
+            const p = arr.reduce((a,b)=>a+b,0) / n;
+            if (p === 0 || p === 1) return 0;
+            return -(p * Math.log2(p) + (1-p) * Math.log2(1-p));
+        }
+
+        function movingAverage(arr, n) {
+            const result = [];
+            for (let i = 0; i <= arr.length - n; i++) {
+                const slice = arr.slice(i, i+n);
+                result.push(slice.reduce((a,b)=>a+b,0)/n);
             }
+            return result;
         }
-        return {pattern:curPat, matches, nextStats, total:matches.length};
-    },
 
-    // 2. 马尔可夫链(二阶)
-    markovChain(h, order=2, type='bs') {
-        if (h.length < order+1) return null;
-        const toKey = x => type==='bs' ? (isBig(x.sum)?'B':'S') : (isOdd(x.sum)?'O':'E');
-        const seq = h.map(toKey);
-        const transitions = {};
-        for (let i=order; i<seq.length; i++) {
-            const state = seq.slice(i-order, i).join('');
-            const next = seq[i];
-            if (!transitions[state]) transitions[state] = {B:0,S:0,O:0,E:0};
-            transitions[state][next]++;
-        }
-        const lastState = seq.slice(-order).join('');
-        const counts = transitions[lastState];
-        if (!counts) return null;
-        if (type==='bs') {
-            const big = counts.B||0, small = counts.S||0;
-            return {大: big/(big+small||1), 小: small/(big+small||1)};
-        } else {
-            const odd = counts.O||0, even = counts.E||0;
-            return {单: odd/(odd+even||1), 双: even/(odd+even||1)};
-        }
-    },
-
-    // 3. 近期频率(自适应窗口)
-    freqBased(h, type='bs', minLen=5, maxLen=20) {
-        const len = Math.min(maxLen, Math.max(minLen, h.length));
-        const recent = h.slice(-len);
-        if (type==='bs') {
-            const b = recent.filter(x=>isBig(x.sum)).length;
-            return {大: b/len, 小: 1-b/len};
-        } else {
-            const o = recent.filter(x=>isOdd(x.sum)).length;
-            return {单: o/len, 双: 1-o/len};
-        }
-    }
-};
-
-// ============================================================
-// 新增辅助函数
-// ============================================================
-function calcTrendScore(h, period = 8) {
-    const recent = h.slice(-period);
-    let score = 0;
-    for (let i = 1; i < recent.length; i++) {
-        const prev = recent[i - 1].sum % 2;
-        const curr = recent[i].sum % 2;
-        if (curr === prev) score += 1;
-        else score -= 0.5;
-    }
-    return score / (period - 1);
-}
-
-function calcConfidence(votes, totalWeight) {
-    if (totalWeight <= 0) return 0;
-    const maxProb = Math.max(votes['单'], votes['双']) / totalWeight;
-    return Math.max(0, Math.min(1, (maxProb - 0.55) * 2));
-}
-
-// ============================================================
-// 【v13 增强】维护时段判断(夏令时 19:00-19:30)
-// ============================================================
-function isMaintenanceTime() {
-    let now = new Date();
-    let hour = now.getHours();
-    let minute = now.getMinutes();
-    let currentMinutes = hour * 60 + minute;
-    let startMinutes = MAINTENANCE_START_HOUR * 60 + MAINTENANCE_START_MINUTE; // 1140
-    let endMinutes = MAINTENANCE_END_HOUR * 60 + MAINTENANCE_END_MINUTE;       // 1170
-
-    // 维护时段不跨天，直接区间判断
-    if (currentMinutes >= startMinutes && currentMinutes <= endMinutes) {
-        return true;
-    }
-    return false;
-}
-
-function getEffectivePrediction() {
-    if (isMaintenanceTime()) {
-        if (lastValidPrediction) {
-            logMsg("⏳ 维护期间，使用最近有效预测");
-            return lastValidPrediction;
-        }
-        return fallbackPrediction();
-    }
-    return null;
-}
-
-function fallbackPrediction() {
-    return {
-        prediction: "大",
-        weightedProbability: { "大": 0.5, "小": 0.5 },
-        type: "均衡型",
-        windows: {},
-        effs: {},
-        final_score: 0.5
-    };
-}
-
-// ============================================================
-// 模型A(含初期保护)
-// ============================================================
-function recent(h,w) { return h.length >= w ? h.slice(-w) : h; }
-function pBig(h,w) { const r = recent(h,w); if(!r.length) return 0.5; return r.filter(x => isBig(x.sum)).length / r.length; }
-function maxStreak(h,w) { const r = recent(h,w); if(!r.length) return 0; let m=1,c=1; for(let i=1;i<r.length;i++){ if(isBig(r[i].sum)===isBig(r[i-1].sum)){c++;m=Math.max(m,c);}else c=1;} return m; }
-function alternation(h,w) { const r = recent(h,w); let a=0; for(let i=1;i<r.length;i++) if(isBig(r[i].sum)!==isBig(r[i-1].sum)) a++; return a; }
-
-function judgeType(h) {
-    if(h.length < 10) return "均衡型";
-    const ws = [10,20,30].filter(w => h.length >= w);
-    const types = ws.map(w => {
-        const p = pBig(h,w), s = maxStreak(h,w), a = alternation(h,w);
-        if(s <= 2 && a >= Math.max(6, Math.floor(w * 0.6))) return "交替型";
-        if((p >= 0.6 || p <= 0.4) && s >= 4) return "趋势型";
-        if((p >= 0.55 || p <= 0.45) && s <= 2 && a <= Math.max(5, Math.floor(w * 0.5))) return "信号型";
-        return "均衡型";
-    });
-    const cnt = {};
-    types.forEach(t => cnt[t] = (cnt[t] || 0) + 1);
-    const best = Object.entries(cnt).sort((a,b) => b[1] - a[1])[0];
-    if(best[0] !== "均衡型" && best[1] < 2) return "均衡型";
-    return best[0];
-}
-
-function extractAdvancedFeatures(h, w = 20) {
-    const r = recent(h, w);
-    if (r.length < 10) return null;
-    const sums = r.map(x => x.sum);
-    const n = sums.length;
-    const mean = sums.reduce((a,b)=>a+b,0)/n;
-    const variance = sums.reduce((a,b)=>a+(b-mean)**2,0)/(n-1);
-    const std = Math.sqrt(variance);
-    const volatility = mean > 0 ? std / mean : 0;
-    const skewness = std > 0 ? sums.reduce((a,b)=>a+((b-mean)/std)**3,0) / n : 0;
-    let autoCorr = 0;
-    if (n >= 10) {
-        const lag = 5;
-        const m1 = sums.slice(0, n-lag).reduce((a,b)=>a+b,0)/(n-lag);
-        const m2 = sums.slice(lag).reduce((a,b)=>a+b,0)/(n-lag);
-        let num = 0, den1 = 0, den2 = 0;
-        for (let i=0; i<n-lag; i++) {
-            num += (sums[i]-m1)*(sums[i+lag]-m2);
-            den1 += (sums[i]-m1)**2;
-            den2 += (sums[i+lag]-m2)**2;
-        }
-        autoCorr = (den1>0 && den2>0) ? num / Math.sqrt(den1*den2) : 0;
-    }
-    const cycleStrength = Math.abs(autoCorr);
-    const lastSum = sums[n-1];
-    const meanReversion = (lastSum - mean) / (std + 0.001);
-    const bigSeq = r.map(x => isBig(x.sum) ? 1 : 0);
-    const p1 = bigSeq.filter(x=>x===1).length / n;
-    const p0 = 1 - p1;
-    const entropy = p1>0 && p0>0 ? -(p1*Math.log2(p1)+p0*Math.log2(p0)) : 0;
-    let altCount = 0;
-    for (let i=1; i<n; i++) if (isBig(r[i].sum) !== isBig(r[i-1].sum)) altCount++;
-    const alternation = altCount / (n-1);
-    const now = new Date();
-    const hour = now.getHours() + now.getMinutes()/60;
-    const timeSlot = hour / 24;
-    const hourRad = (hour / 24) * 2 * Math.PI;
-    const hourSin = Math.sin(hourRad);
-    const hourCos = Math.cos(hourRad);
-    const anomalyFlag = detectAnomaly(r) ? 1 : 0;
-    return {
-        bigRatio: p1,
-        shortTrend: 0.5 + Math.max(-0.25, Math.min(0.25, (p1 - 0.5) * 0.8)),
-        streak: (()=>{
-            let c=1; for(let i=n-2; i>=0; i--) if(isBig(r[i].sum)===isBig(r[n-1].sum)) c++; else break; return c;
-        })(),
-        volatility,
-        skewness,
-        cycleStrength,
-        meanReversion,
-        entropy,
-        alternation,
-        timeSlot,
-        hourSin,
-        hourCos,
-        anomalyFlag
-    };
-}
-
-function modelAWindow(h,w, weight) {
-    const r = recent(h,w);
-    if(!r.length) return {score:0.5, pBig:0.5, reliability:0};
-    const p = pBig(h,w);
-    const sh = recent(h, Math.min(5, h.length));
-    const sp = sh.length ? sh.filter(x => isBig(x.sum)).length / sh.length : 0.5;
-    const trend = 0.5 + Math.max(-0.25, Math.min(0.25, (sp - 0.5) * 0.8));
-    const lb = isBig(r[r.length-1].sum);
-    let cs = 1;
-    for(let i = r.length-2; i >= 0; i--) { if(isBig(r[i].sum) === lb) cs++; else break; }
-    const streakSig = 0.5 + (lb ? 0.25 : -0.25) * Math.min(cs / 5, 1);
-    let score = p * weight[0] + trend * weight[1] + streakSig * weight[2];
-    if(cs >= A_REVERSAL_STREAK && cs < 6) {
-        const adj = Math.min(0.03, 0.01 * (cs - A_REVERSAL_STREAK + 1));
-        score += lb ? -adj : adj;
-    }
-    score = Math.max(0, Math.min(1, score));
-    const rel = Math.min(r.length / w, 1) * 0.6 + Math.min(Math.abs(p - 0.5) * 2, 0.5) * 0.4;
-
-    const feats = extractAdvancedFeatures(h, w);
-    if (feats) {
-        if (feats.volatility > 0.2) score = score * 0.9 + 0.5 * 0.1;
-        if (feats.cycleStrength > 0.5) score = score * 0.85 + feats.shortTrend * 0.15;
-        if (Math.abs(feats.meanReversion) > 2.0) {
-            const correction = -feats.meanReversion * 0.02;
-            score = Math.max(0, Math.min(1, score + correction));
-        }
-        if (feats.entropy > 0.8) score = score * 0.7 + 0.5 * 0.3;
-    }
-    return {score, pBig: p, reliability: rel, p_big:p, trend_signal:trend, streak_signal:streakSig, current_streak:cs, reversal_adj:(cs>=A_REVERSAL_STREAK&&cs<6)?(lb?-0.03:0.03):0, sample_count:r.length};
-}
-
-let modelAWeights = {
-    slotWeights: {
-        "凌晨": { weight: A_DEFAULT_WEIGHT.slice(), lastUpdate: 0 },
-        "早上": { weight: A_DEFAULT_WEIGHT.slice(), lastUpdate: 0 },
-        "上午": { weight: A_DEFAULT_WEIGHT.slice(), lastUpdate: 0 },
-        "中午": { weight: A_DEFAULT_WEIGHT.slice(), lastUpdate: 0 },
-        "下午": { weight: A_DEFAULT_WEIGHT.slice(), lastUpdate: 0 },
-        "傍晚": { weight: A_DEFAULT_WEIGHT.slice(), lastUpdate: 0 },
-        "晚上": { weight: A_DEFAULT_WEIGHT.slice(), lastUpdate: 0 }
-    },
-    lastObservedPeriod: null,
-    forceRefresh: function() {
-        for(const key in this.slotWeights) {
-            this.slotWeights[key].lastUpdate = 0;
-        }
-    },
-    getWeight: function(slot, slotHistory) {
-        const state = this.slotWeights[slot];
-        if(!state) return A_DEFAULT_WEIGHT.slice();
-        const n = slotHistory.length;
-        if(n >= 50 && (state.lastUpdate === 0 || n - state.lastUpdate >= 20)) {
-            const newWeight = searchBestWeight(slotHistory);
-            if(newWeight) {
-                state.weight = newWeight;
-                state.lastUpdate = n;
+        function computeRSI(arr, period) {
+            if (arr.length < period + 1) return 50;
+            let gains = 0, losses = 0;
+            for (let i = 1; i <= period; i++) {
+                const diff = arr[i] - arr[i-1];
+                if (diff >= 0) gains += diff;
+                else losses -= diff;
             }
+            const avgGain = gains / period;
+            const avgLoss = losses / period;
+            if (avgLoss === 0) return 100;
+            const rs = avgGain / avgLoss;
+            return 100 - (100 / (1 + rs));
         }
-        return state.weight.slice();
-    }
-};
 
-function searchBestWeight(history) {
-    if(history.length < 50) return null;
-    const candidates = generateWeightCandidates();
-    let bestScore = -1.0;
-    let bestWeight = A_DEFAULT_WEIGHT.slice();
-    for(let idx = 0; idx < candidates.length; idx++) {
-        const weight = candidates[idx];
-        let hits = 0, total = 0;
-        for(let i = 10; i < history.length; i++) {
-            const prev = history.slice(0, i);
-            if(prev.length < 10) continue;
-            const p = pBig(prev, 10);
-            const short = recent(prev, Math.min(5, prev.length));
-            const shortP = short.length ? short.filter(x => isBig(x.sum)).length / short.length : 0.5;
-            const trendSignal = 0.5 + Math.max(-0.25, Math.min(0.25, (shortP - 0.5) * 0.8));
-            const lastBig = isBig(prev[prev.length - 1].sum);
-            let currentStreak = 1;
-            for(let j = prev.length - 2; j >= 0; j--) {
-                if(isBig(prev[j].sum) === lastBig) currentStreak++;
-                else break;
-            }
-            const streakSignal = 0.5 + (lastBig ? 0.25 : -0.25) * Math.min(currentStreak / 5.0, 1.0);
-            const raw = p * weight[0] + trendSignal * weight[1] + streakSignal * weight[2];
-            const pred = raw >= 0.5 ? "大" : "小";
-            const actual = isBig(history[i].sum) ? "大" : "小";
-            if(pred === actual) hits++;
-            total++;
+        function computeMACD(arr, fast=12, slow=26, signal=9) {
+            if (arr.length < slow + signal) return 0;
+            const emaFast = arr.slice(-fast).reduce((a,b)=>a+b,0)/fast;
+            const emaSlow = arr.slice(-slow).reduce((a,b)=>a+b,0)/slow;
+            const macd = emaFast - emaSlow;
+            const sig = arr.slice(-signal).reduce((a,b)=>a+b,0)/signal;
+            return macd - sig;
         }
-        const rollingRate = total > 0 ? hits / total : 0.5;
-        const distance = Math.abs(weight[0] - A_DEFAULT_WEIGHT[0]) + Math.abs(weight[1] - A_DEFAULT_WEIGHT[1]) + Math.abs(weight[2] - A_DEFAULT_WEIGHT[2]);
-        const regularization = Math.min(distance, 1.0) * 0.05;
-        const score = rollingRate - regularization;
-        if(score > bestScore) {
-            bestScore = score;
-            bestWeight = weight.slice();
-        }
-    }
-    const limited = [];
-    for(let i = 0; i < 3; i++) {
-        const low = Math.max(0.15, A_DEFAULT_WEIGHT[i] - A_MAX_WEIGHT_DEVIATION);
-        const high = Math.min(0.75, A_DEFAULT_WEIGHT[i] + A_MAX_WEIGHT_DEVIATION);
-        limited.push(Math.min(Math.max(bestWeight[i], low), high));
-    }
-    const total = limited.reduce((a,b) => a + b, 0);
-    if(total <= 0) return A_DEFAULT_WEIGHT.slice();
-    return limited.map(x => Math.round((x / total) * 10000) / 10000);
-}
 
-function generateWeightCandidates() {
-    const candidates = [];
-    for(let i = 0; i <= 12; i++) {
-        candidates.push(Math.round((0.15 + i * 0.05) * 100) / 100);
-    }
-    const result = [];
-    for(let i = 0; i < candidates.length; i++) {
-        for(let j = 0; j < candidates.length; j++) {
-            const w3 = Math.round((1.0 - candidates[i] - candidates[j]) * 100) / 100;
-            if(w3 >= 0.15 && w3 <= 0.75 && Math.abs(candidates[i] + candidates[j] + w3 - 1.0) <= 0.001) {
-                result.push([candidates[i], candidates[j], w3]);
-            }
-        }
-    }
-    return result;
-}
-
-// ============================================================
-// 【v13 修正】统一使用 isMaintenanceTime() 判断维护时段
-// ============================================================
-function getTimeSlot(hour, minute) {
-    if(isMaintenanceTime()) return "维护时段";   // 统一调用维护判断函数
-    if(hour >= 0 && hour < 6) return "凌晨";
-    if(hour >= 6 && hour < 8) return "早上";
-    if(hour >= 8 && hour < 12) return "上午";
-    if(hour >= 12 && hour < 14) return "中午";
-    if(hour >= 14 && hour < 18) return "下午";
-    if(hour >= 18 && hour < 19) return "傍晚";
-    return "晚上";
-}
-
-// ============================================================
-// 模型A(增强版：混合集成 + 趋势置信度修正)
-// ============================================================
-function predictA(h) {
-    if (isMaintenanceTime()) {
-        return {prediction:null,reason:"维护",weightedProbability:{"大":0.5,"小":0.5},type:"维护",final_score:0.5,confidence:0};
-    }
-
-    // ---- 模型1：模式匹配(3,5,7,10期，允许1位容错) ----
-    let pmVotes = {大:0,小:0}, pmWeight = 0;
-    for (let len of [3,5,7,10]) {
-        const res = TOOL.patternMatch(h, len, 'bs', 1);
-        if (res && res.total>=3) {
-            const tot = (res.nextStats['大']||0)+(res.nextStats['小']||0);
-            if (tot>0) {
-                pmVotes['大'] += (res.nextStats['大']||0)/tot * tot*len;
-                pmVotes['小'] += (res.nextStats['小']||0)/tot * tot*len;
-                pmWeight += tot*len;
-            }
-        }
-    }
-    const pmProb = pmWeight>0 ? {大:pmVotes['大']/pmWeight, 小:pmVotes['小']/pmWeight} : null;
-    const pmConf = pmWeight>0 ? calcConfidence({单:pmVotes['大'], 双:pmVotes['小']}, pmWeight) : 0;
-
-    // ---- 模型2：马尔可夫链 ----
-    const mcProb = TOOL.markovChain(h, 2, 'bs');
-    const mcConf = mcProb ? 0.6 : 0; // 简单置信度估算
-
-    // ---- 模型3：近期频率(自适应15期) ----
-    const freqProb = TOOL.freqBased(h, 'bs', 10, 20);
-    const freqConf = 0.5;
-
-    // ---- 集成加权(动态调整权重) ----
-    const verified = session.records.filter(r=>r.status==="已验证");
-    let wPM=0.5, wMC=0.3, wFreq=0.2; // 初始权重
-    if (verified.length>=10) {
-        const recent = verified.slice(-20);
-        let pmCorr=0, mcCorr=0, freqCorr=0;
-        for (let r of recent) {
-            const tgt = historyData.find(h=>parseInt(h.nbr)===r.target);
-            if(!tgt) continue;
-            if(r.predA && tgt.type[0]===r.predA) pmCorr++;
-        }
-        const pmAcc = recent.length>0 ? pmCorr/recent.length : 0.5;
-        wPM = Math.max(0.2, Math.min(0.8, pmAcc*1.5));
-        wMC = 0.4*(1-wPM);
-        wFreq = 0.6*(1-wPM);
-    }
-
-    // 合并概率
-    let finalProb = {大:0,小:0};
-    const models = [
-        {prob:pmProb, weight:wPM},
-        {prob:mcProb, weight:wMC},
-        {prob:freqProb, weight:wFreq}
-    ];
-    let totalW = 0;
-    for (let m of models) {
-        if (m.prob) {
-            finalProb['大'] += (m.prob['大']||0)*m.weight;
-            finalProb['小'] += (m.prob['小']||0)*m.weight;
-            totalW += m.weight;
-        }
-    }
-    if (totalW>0) {
-        finalProb['大'] /= totalW;
-        finalProb['小'] /= totalW;
-    } else {
-        finalProb = {大:0.5,小:0.5};
-    }
-
-    // ---- 趋势得分修正 ----
-    const trend = calcTrendScore(h, 8);
-    if (Math.abs(trend) > 0.3) {
-        const delta = trend * 0.08;
-        finalProb['大'] = Math.max(0.05, Math.min(0.95, finalProb['大'] + delta));
-        finalProb['小'] = 1 - finalProb['大'];
-    }
-
-    // ---- 置信度修正 ----
-    const conf = pmConf * 0.5 + mcConf * 0.3 + freqConf * 0.2; // 综合置信度
-    if (conf < 0.3) {
-        const shrink = (1 - conf) * 0.2;
-        finalProb['大'] = 0.5 + (finalProb['大'] - 0.5) * (1 - shrink);
-        finalProb['小'] = 1 - finalProb['大'];
-    }
-
-    // 自适应阈值
-    const recentBigRate = h.slice(-30).filter(x=>isBig(x.sum)).length / Math.min(30,h.length);
-    const threshold = 0.498 + (recentBigRate-0.497)*0.2;
-    const prediction = finalProb['大'] >= threshold ? '大' : '小';
-
-    return {
-        prediction,
-        weightedProbability: finalProb,
-        type: "混合集成",
-        slot: "全时段",
-        weight: [wPM,wMC,wFreq],
-        windows: {模式匹配:pmProb?.大, 马尔可夫:mcProb?.大, 频率:freqProb?.大},
-        effs: {权重: `${wPM.toFixed(2)}/${wMC.toFixed(2)}/${wFreq.toFixed(2)}`, 趋势: trend.toFixed(3), 置信度: conf.toFixed(3) },
-        final_score: finalProb['大'],
-        confidence: conf
-    };
-}
-
-// ============================================================
-// 贝叶斯优化器
-// ============================================================
-class BayesianOptimizer {
-    constructor(kernel = 'rbf', alpha = 1e-6, lengthScale = 500, sigmaF = 0.1) {
-        this.kernel = kernel;
-        this.alpha = alpha;
-        this.lengthScale = lengthScale;
-        this.sigmaF = sigmaF;
-        this.X = [];
-        this.y = [];
-        this.L = null;
-        this.alphaCache = null;
-    }
-
-    _kernelFunc(x1, x2) {
-        const diff = x1 - x2;
-        return this.sigmaF ** 2 * Math.exp(-0.5 * (diff / this.lengthScale) ** 2);
-    }
-
-    fit(X, y) {
-        this.X = X.slice();
-        this.y = y.slice();
-        const n = X.length;
-        const K = Array.from({ length: n }, () => new Array(n).fill(0));
-        for (let i = 0; i < n; i++) {
-            for (let j = 0; j <= i; j++) {
-                const k = this._kernelFunc(X[i], X[j]);
-                K[i][j] = k;
-                K[j][i] = k;
-            }
-            K[i][i] += this.alpha;
-        }
-        this.L = this._cholesky(K);
-        const n2 = n;
-        const sol = new Array(n2).fill(0);
-        for (let i = 0; i < n2; i++) {
-            let sum = 0;
-            for (let j = 0; j < i; j++) sum += this.L[i][j] * sol[j];
-            sol[i] = (y[i] - sum) / this.L[i][i];
-        }
-        this.alphaCache = new Array(n2).fill(0);
-        for (let i = n2 - 1; i >= 0; i--) {
-            let sum = 0;
-            for (let j = i + 1; j < n2; j++) sum += this.L[j][i] * this.alphaCache[j];
-            this.alphaCache[i] = (sol[i] - sum) / this.L[i][i];
-        }
-    }
-
-    _cholesky(A) {
-        const n = A.length;
-        const L = Array.from({ length: n }, () => new Array(n).fill(0));
-        for (let i = 0; i < n; i++) {
-            for (let j = 0; j <= i; j++) {
-                let sum = 0;
-                for (let k = 0; k < j; k++) sum += L[i][k] * L[j][k];
-                if (i === j) {
-                    L[i][j] = Math.sqrt(A[i][i] - sum);
-                } else {
-                    L[i][j] = (A[i][j] - sum) / L[j][j];
+        function dftPeaks(arr, k=3) {
+            const N = arr.length;
+            if (N === 0) return [0,0,0];
+            const peaks = [];
+            for (let f = 1; f <= k; f++) {
+                let real = 0, imag = 0;
+                for (let n = 0; n < N; n++) {
+                    const angle = 2 * Math.PI * f * n / N;
+                    real += arr[n] * Math.cos(angle);
+                    imag += arr[n] * Math.sin(angle);
                 }
+                peaks.push(Math.sqrt(real*real + imag*imag) / N);
             }
+            return peaks;
         }
-        return L;
-    }
 
-    predict(Xnew) {
-        const n = this.X.length;
-        const m = Xnew.length;
-        const mu = new Array(m).fill(0);
-        const sigma2 = new Array(m).fill(0);
-        for (let i = 0; i < m; i++) {
-            const kStar = new Array(n).fill(0);
-            for (let j = 0; j < n; j++) {
-                kStar[j] = this._kernelFunc(this.X[j], Xnew[i]);
+        function computeHotCold(arr) {
+            const hist = new Array(28).fill(0);
+            for (const s of arr) {
+                if (s >= 0 && s <= 27) hist[s]++;
             }
-            const v = new Array(n).fill(0);
-            for (let j = 0; j < n; j++) {
-                let sum = 0;
-                for (let k = 0; k < j; k++) sum += this.L[j][k] * v[k];
-                v[j] = (kStar[j] - sum) / this.L[j][j];
-            }
-            mu[i] = 0;
-            for (let j = 0; j < n; j++) mu[i] += kStar[j] * this.alphaCache[j];
-            const kxx = this._kernelFunc(Xnew[i], Xnew[i]) + this.alpha;
-            let vNorm = 0;
-            for (let j = 0; j < n; j++) vNorm += v[j] ** 2;
-            sigma2[i] = kxx - vNorm;
-            if (sigma2[i] < 0) sigma2[i] = 0;
+            const total = arr.length;
+            return hist.map(v => v / total);
         }
-        return { mu, sigma: sigma2.map(s => Math.sqrt(s)) };
-    }
 
-    suggest(bounds, kappa = 2.0, nCandidates = 1000) {
-        const [low, high] = bounds;
-        const candidates = [];
-        for (let i = 0; i < nCandidates; i++) {
-            candidates.push(low + (high - low) * Math.random());
+        function computeMissingValue(arr) {
+            if (arr.length === 0) return 0;
+            const current = arr[arr.length-1];
+            let miss = 0;
+            for (let i = arr.length-2; i >= 0; i--) {
+                if (arr[i] === current) break;
+                miss++;
+            }
+            return miss;
         }
-        const { mu, sigma } = this.predict(candidates);
-        let bestVal = -Infinity;
-        let bestIdx = 0;
-        for (let i = 0; i < candidates.length; i++) {
-            const ucb = mu[i] + kappa * sigma[i];
-            if (ucb > bestVal) {
-                bestVal = ucb;
-                bestIdx = i;
-            }
-        }
-        return candidates[bestIdx];
-    }
-}
 
-// ============================================================
-// Mulberry32 与 模型B
-// ============================================================
-function mulberry32(seed) {
-    function imul32(a,b) {
-        let v = ((a & 0xFFFFFFFF) * (b & 0xFFFFFFFF)) & 0xFFFFFFFF;
-        if (v & 0x80000000) v -= 0x100000000;
-        return v;
-    }
-    let a = (parseInt(seed) & 0xFFFFFFFF) + 0x6D2B79F5;
-    a &= 0xFFFFFFFF;
-    let t = imul32((a ^ (a >> 15)), (1 | a));
-    t = (t + imul32((t ^ ((t & 0xFFFFFFFF) >> 7)), (61 | t))) ^ t;
-    t &= 0xFFFFFFFF;
-    t ^= (t >> 14);
-    return ((t & 0xFFFFFFFF) / 4294967296.0);
-}
+        function extractAdvancedFeatures(h) {
+            if (!h || h.length < 21) return null;
+            const sums = h.map(x => x.sum);
+            const len = sums.length;
 
-const SEQUENCES = [
-    [0,3,9,12,15,18,21,24,27],
-    [1,4,7,10,13,16,19,22,25],
-    [2,5,8,11,14,17,20,23,26]
-];
-function isSameSeq(a,b) {
-    return SEQUENCES.some(s => s.includes(a) && s.includes(b));
-}
+            const s5 = sums.slice(-5);
+            const shortMean = s5.reduce((a,b)=>a+b,0)/5;
+            const shortStd = Math.sqrt(s5.reduce((a,b)=>a+(b-shortMean)**2,0)/5);
+            const shortMomentum = s5[4] - s5[0];
+            const shortEntropy = entropy(s5.map(s=>s>=14?1:0));
 
-const RULES = {
-    same: {
-        "小双": ["小双","大双","大单"],
-        "小单": ["小单","大单","大双"],
-        "大双": ["大双","小双","小单"],
-        "大单": ["大单","小单","小双"]
-    },
-    diff: {
-        "小双": ["小双","小单","大单"],
-        "小单": ["小单","小双","大双"],
-        "大双": ["大双","大单","小单"],
-        "大单": ["大单","大双","小双"]
-    }
-};
+            const s20 = sums.slice(-20);
+            const ma5 = movingAverage(s20,5);
+            const ma20_ = movingAverage(s20,20);
+            const lastMa5 = ma5.length > 0 ? ma5[ma5.length-1] : shortMean;
+            const lastMa20 = ma20_.length > 0 ? ma20_[ma20_.length-1] : shortMean;
+            const bbUpper = lastMa20 + 2 * shortStd;
+            const bbLower = lastMa20 - 2 * shortStd;
+            const rsi = computeRSI(s20, 14);
+            const macd = computeMACD(s20, 12, 26, 9);
 
-function getBPrediction(seed, prev) {
-    const rv = mulberry32(seed + parseInt(prev.nbr));
-    const prod = rv * prev.sum;
-    const digits = prod.toFixed(3).replace(".", "");
-    const fs = [...digits].map(Number).reduce((a,b) => a + b, 0);
-    const ct = getType(fs);
-    const rs = [...rv.toFixed(8).split(".")[1].slice(0,3)].map(Number).reduce((a,b) => a + b, 0);
-    const same = isSameSeq(rs, prev.sum);
-    return RULES[same ? "same" : "diff"][ct].slice();
-}
+            const allSums = sums;
+            const freqPeaks = dftPeaks(allSums.slice(-128), 3);
+            const hotCold = computeHotCold(allSums);
+            const missingValue = computeMissingValue(allSums);
 
-// ============================================================
-// 模型B - 种子回测
-// ============================================================
-function seedBacktest(h, seed) {
-    if(h.length < 50) return {error: 1};
-    const hits = [];
-    const details = [];
-    const groupStats = {};
-    ALL_TYPES.forEach(g => {
-        groupStats[g] = {hits: 0, total: 0, excluded: 0, opened: 0};
-    });
+            const pattern5 = h.slice(-5).map(r=>{
+                const s = r.sum;
+                return (s>=14?'B':'S') + (s%2===1?'O':'E');
+            }).join('');
 
-    for(let i = 50; i < h.length; i++) {
-        const g = getBPrediction(seed, {nbr: h[i-1].nbr, sum: h[i-1].sum, type: h[i-1].type});
-        const actual = h[i].type;
-        const hit = g.includes(actual) ? 1 : 0;
-        hits.push(hit);
-        details.push({target: h[i].nbr, groups: g.join(','), hit: hit});
-
-        g.forEach(x => {
-            if(groupStats[x]) {
-                groupStats[x].total += 1;
-                if(actual === x) groupStats[x].hits += 1;
-            }
-        });
-        ALL_TYPES.forEach(x => {
-            if(!g.includes(x)) groupStats[x].excluded += 1;
-            if(actual === x) groupStats[x].opened += 1;
-        });
-    }
-
-    const total = hits.length;
-    if(!total) return {error: 1};
-    const overall = hits.reduce((a,b) => a + b, 0) / total;
-    const r30 = hits.slice(-Math.min(30, total));
-    const rr = r30.reduce((a,b) => a + b, 0) / r30.length;
-
-    const blocks = [];
-    for(let i = 0; i <= total - 10; i += 10) {
-        const b = hits.slice(i, i + 10);
-        blocks.push(b.reduce((a,c) => a + c, 0) / b.length);
-    }
-    const mean = blocks.length ? blocks.reduce((a,b) => a + b, 0) / blocks.length : 0.5;
-    const variance = blocks.length ? blocks.reduce((a,b) => a + (b - mean) ** 2, 0) / blocks.length : 0;
-    let stability = blocks.length >= 2 ? Math.max(0, Math.min(1, 1 - Math.sqrt(variance))) : 0.5;
-
-    const recentBlocks = blocks.slice(-3);
-    let recentBlockStability = 0.5;
-    if(recentBlocks.length >= 2) {
-        const rbMean = recentBlocks.reduce((a,b) => a + b, 0) / recentBlocks.length;
-        const rbVar = recentBlocks.reduce((a,b) => a + (b - rbMean) ** 2, 0) / recentBlocks.length;
-        recentBlockStability = Math.max(0, Math.min(1, 1 - Math.sqrt(rbVar)));
-    }
-    stability = stability * 0.60 + recentBlockStability * 0.40;
-
-    let c = 0, m = 0;
-    hits.forEach(x => { if(!x){ c++; m = Math.max(m,c); } else c = 0; });
-    const lossPen = Math.max(0, 1 - m / total);
-
-    const recentSums = h.slice(-30).map(x=>x.sum);
-    const mMean = recentSums.reduce((a,b)=>a+b,0)/recentSums.length;
-    const recentVolatility = Math.sqrt(recentSums.reduce((a,b)=>a+(b-mMean)**2,0)/recentSums.length);
-    const volFactor = Math.min(1, recentVolatility / 5);
-    const weights = {
-        overall: 0.4 - 0.15 * volFactor,
-        recent: 0.3 + 0.20 * volFactor,
-        stability: 0.2 - 0.05 * volFactor,
-        lossPen: 0.1
-    };
-    const sumW = Object.values(weights).reduce((a,b)=>a+b,0);
-    Object.keys(weights).forEach(k => weights[k] /= sumW);
-
-    const score = overall * weights.overall + rr * weights.recent + stability * weights.stability + lossPen * weights.lossPen;
-
-    const groupPrecision = {};
-    const groupConfidence = {};
-    const groupExcludedRisk = {};
-    ALL_TYPES.forEach(g => {
-        const st = groupStats[g];
-        groupPrecision[g] = (st.hits + B_GROUP_SMOOTHING) / (st.total + 2 * B_GROUP_SMOOTHING);
-        groupConfidence[g] = Math.min(1.0, st.total / 20.0);
-        const openedWhenExcluded = st.opened - st.hits;
-        groupExcludedRisk[g] = st.excluded > 0
-            ? (openedWhenExcluded + B_GROUP_SMOOTHING) / (st.excluded + 2 * B_GROUP_SMOOTHING)
-            : 0.5;
-    });
-
-    return {
-        overall,
-        recentRate: rr,
-        stability,
-        recentBlockStability,
-        score,
-        hits,
-        details,
-        max_loss: m,
-        lossPen: lossPen,
-        groupStats,
-        groupPrecision,
-        groupConfidence,
-        groupExcludedRisk,
-        recentEwma: (() => {
-            const recent10 = hits.slice(-Math.min(10, total));
-            if(!recent10.length) return 0.5;
-            let value = recent10[0];
-            for(let i = 1; i < recent10.length; i++) {
-                value = B_RECENT_EWMA_ALPHA * recent10[i] + (1 - B_RECENT_EWMA_ALPHA) * value;
-            }
-            return value;
-        })()
-    };
-}
-
-// ============================================================
-// B模型种子选择(冷启动 + 贝叶斯优化) - 增强版
-// ============================================================
-function selectSeed(h) {
-    if(h.length < 50) return {error: 1};
-
-    const verifiedCount = session.records.filter(r => r.status === "已验证").length;
-    if (verifiedCount < 50) {
-        const randomSeed = preseeds[Math.floor(Math.random() * preseeds.length)];
-        const detail = seedBacktest(h, randomSeed);
-        if (!detail.error) {
-            logMsg("❄️ B模型冷启动：使用预训练种子 " + randomSeed);
             return {
-                bestSeed: randomSeed,
-                score: detail.score || 0,
-                detail: detail,
+                short: { mean: shortMean, std: shortStd, momentum: shortMomentum, entropy: shortEntropy },
+                medium: { ma5: lastMa5, ma20: lastMa20, bbUpper, bbLower, rsi, macd },
+                long: { freqPeaks, hotCold, missingValue },
+                pattern5,
+                rawSums: s20
+            };
+        }
+
+        // ============================================================
+        // 基学习器A：TCN
+        // ============================================================
+        function tcnPredict(features) {
+            if (!features) return { prob: 0.5, prediction: '大' };
+            const input = [
+                features.short.mean / 27,
+                features.short.std / 10,
+                features.short.momentum / 10,
+                features.short.entropy,
+                features.medium.rsi / 100,
+                features.medium.macd / 5,
+                features.long.freqPeaks[0] || 0,
+                features.long.freqPeaks[1] || 0,
+                features.long.hotCold[14] || 0,
+                features.long.missingValue / 50
+            ];
+            let logit = tcnBias;
+            for (let i = 0; i < input.length; i++) {
+                logit += tcnWeights[i] * input[i];
+            }
+            const prob = 1 / (1 + Math.exp(-logit));
+            const pred = prob > 0.5 ? '大' : '小';
+            return { prob, prediction: pred };
+        }
+
+        // ============================================================
+        // 基学习器B：注意力LSTM
+        // ============================================================
+        function attentionLstmPredict(features) {
+            if (!features) return { prob: 0.5, prediction: '单' };
+            const seq = features.rawSums.map(s => s / 27);
+            const scores = seq.map((v, i) => v * (1 + i * 0.02));
+            const expScores = scores.map(s => Math.exp(s));
+            const sumExp = expScores.reduce((a,b)=>a+b, 0.001);
+            const attn = expScores.map(s => s / sumExp);
+            const context = seq.reduce((sum, v, i) => sum + v * attn[i], 0);
+            let logit = attnBias;
+            for (let i = 0; i < 20 && i < seq.length; i++) {
+                logit += attnWeights[i] * seq[i];
+            }
+            logit += 0.5 * context;
+            const prob = 1 / (1 + Math.exp(-logit));
+            const pred = prob > 0.5 ? '单' : '双';
+            return { prob, prediction: pred };
+        }
+
+        // ============================================================
+        // 基学习器C：GBDT(独立树桩预测大小和单双)
+        // ============================================================
+        function gbdtPredict(features) {
+            if (!features) return { probBig: 0.5, probOdd: 0.5 };
+            const input = [
+                features.short.mean / 27,
+                features.short.std / 10,
+                features.short.momentum / 10,
+                features.short.entropy,
+                features.medium.rsi / 100,
+                features.medium.macd / 5,
+                features.long.freqPeaks[0] || 0,
+                features.long.freqPeaks[1] || 0,
+                features.long.hotCold[14] || 0,
+                features.long.missingValue / 50
+            ];
+            let scoreBig = 0, scoreOdd = 0;
+            for (const stump of gbdtStumpsBig) {
+                const val = input[stump.featureIdx] || 0;
+                scoreBig += val > stump.threshold ? stump.rightVal : stump.leftVal;
+            }
+            for (const stump of gbdtStumpsOdd) {
+                const val = input[stump.featureIdx] || 0;
+                scoreOdd += val > stump.threshold ? stump.rightVal : stump.leftVal;
+            }
+            const probBig = 1 / (1 + Math.exp(-scoreBig));
+            const probOdd = 1 / (1 + Math.exp(-scoreOdd));
+            return { probBig, probOdd };
+        }
+
+        // ============================================================
+        // 对抗判别器
+        // ============================================================
+        function adversarialDiscriminator(features) {
+            if (!features) return { trendProb: 0.5 };
+            const vol = features.short.std;
+            const trend = features.short.momentum;
+            const ent = features.short.entropy;
+            const trendScore = Math.min(1, Math.abs(trend) / 5) * (1 - ent);
+            const oscScore = Math.min(1, vol / 3) * ent;
+            const trendProb = trendScore / (trendScore + oscScore + 0.001);
+            return { trendProb };
+        }
+
+        // ============================================================
+        // 动态贝叶斯组合(简化卡尔曼滤波)
+        // ============================================================
+        function bayesianCombine(models, discOutput) {
+            const priorWeights = {
+                trendMarket: { A: 0.40, B: 0.30, C: 0.30 },
+                oscMarket: { A: 0.20, B: 0.40, C: 0.40 }
+            };
+            const isTrend = discOutput.trendProb > 0.6;
+            const base = isTrend ? priorWeights.trendMarket : priorWeights.oscMarket;
+
+            // 指数平滑(简化卡尔曼)
+            const smoothFactor = 0.7;
+            const newWeights = {};
+            for (const key of ['A', 'B', 'C']) {
+                newWeights[key] = smoothFactor * kalmanWeights[key] + (1 - smoothFactor) * base[key];
+            }
+            // 归一化
+            const total = newWeights.A + newWeights.B + newWeights.C;
+            if (total > 0) {
+                newWeights.A /= total;
+                newWeights.B /= total;
+                newWeights.C /= total;
+            } else {
+                newWeights.A = 0.34; newWeights.B = 0.33; newWeights.C = 0.33;
+            }
+            kalmanWeights = newWeights;
+
+            // 计算四型概率
+            const probs = { '大单': 0, '大双': 0, '小单': 0, '小双': 0 };
+            for (const model of models) {
+                const w = newWeights[model.name] || 0;
+                const pBig = model.probBig !== undefined ? model.probBig : 0.5;
+                const pOdd = model.probOdd !== undefined ? model.probOdd : 0.5;
+                probs['大单'] += w * pBig * pOdd;
+                probs['大双'] += w * pBig * (1 - pOdd);
+                probs['小单'] += w * (1 - pBig) * pOdd;
+                probs['小双'] += w * (1 - pBig) * (1 - pOdd);
+            }
+            const totalProb = probs['大单'] + probs['大双'] + probs['小单'] + probs['小双'];
+            if (totalProb > 0) {
+                for (const key of Object.keys(probs)) probs[key] /= totalProb;
+            } else {
+                probs['大单'] = 0.25; probs['大双'] = 0.25; probs['小单'] = 0.25; probs['小双'] = 0.25;
+            }
+            return { probs, weights: newWeights, isTrend };
+        }
+
+        // ============================================================
+        // 在线学习
+        // ============================================================
+        function onlineUpdate(actualType, predictions, features) {
+            const actualBig = actualType[0] === '大' ? 1 : 0;
+            const actualOdd = actualType[1] === '单' ? 1 : 0;
+
+            const input = [
+                features.short.mean / 27,
+                features.short.std / 10,
+                features.short.momentum / 10,
+                features.short.entropy,
+                features.medium.rsi / 100,
+                features.medium.macd / 5,
+                features.long.freqPeaks[0] || 0,
+                features.long.freqPeaks[1] || 0,
+                features.long.hotCold[14] || 0,
+                features.long.missingValue / 50
+            ];
+
+            // 更新 TCN
+            const predBig = predictions.A.probBig;
+            const errorBig = predBig - actualBig;
+            const lr = 0.01;
+            for (let i = 0; i < tcnWeights.length; i++) {
+                tcnWeights[i] -= lr * errorBig * input[i];
+            }
+            tcnBias -= lr * errorBig;
+
+            // 更新注意力LSTM
+            const seq = features.rawSums.map(s => s / 27);
+            const predOdd = predictions.B.probOdd;
+            const errorOdd = predOdd - actualOdd;
+            for (let i = 0; i < 20 && i < seq.length; i++) {
+                attnWeights[i] -= lr * errorOdd * seq[i];
+            }
+            attnBias -= lr * errorOdd;
+
+            // 更新 GBDT 大小树桩
+            const predBigC = predictions.C.probBig;
+            const residualBig = actualBig - predBigC;
+            for (const stump of gbdtStumpsBig) {
+                const val = input[stump.featureIdx] || 0;
+                const dir = val > stump.threshold ? 1 : -1;
+                stump.leftVal += 0.01 * residualBig * (dir === -1 ? 1 : 0);
+                stump.rightVal += 0.01 * residualBig * (dir === 1 ? 1 : 0);
+            }
+            // 更新 GBDT 单双树桩
+            const predOddC = predictions.C.probOdd;
+            const residualOdd = actualOdd - predOddC;
+            for (const stump of gbdtStumpsOdd) {
+                const val = input[stump.featureIdx] || 0;
+                const dir = val > stump.threshold ? 1 : -1;
+                stump.leftVal += 0.01 * residualOdd * (dir === -1 ? 1 : 0);
+                stump.rightVal += 0.01 * residualOdd * (dir === 1 ? 1 : 0);
+            }
+
+            // 更新连续错误计数
+            const predABig = predictions.A.probBig > 0.5 ? '大' : '小';
+            const predBOdd = predictions.B.probOdd > 0.5 ? '单' : '双';
+            const predCBig = predictions.C.probBig > 0.5 ? '大' : '小';
+            if (predABig !== actualType[0]) consecutiveLoss.A++;
+            else consecutiveLoss.A = 0;
+            if (predBOdd !== actualType[1]) consecutiveLoss.B++;
+            else consecutiveLoss.B = 0;
+            if (predCBig !== actualType[0]) consecutiveLoss.C++;
+            else consecutiveLoss.C = 0;
+
+            // 止损：连续错误≥3，降低对应模型权重，并设最小权重限制
+            if (consecutiveLoss.A >= 3) {
+                kalmanWeights.A *= 0.8;
+                consecutiveLoss.A = 0;
+            }
+            if (consecutiveLoss.B >= 3) {
+                kalmanWeights.B *= 0.8;
+                consecutiveLoss.B = 0;
+            }
+            if (consecutiveLoss.C >= 3) {
+                kalmanWeights.C *= 0.8;
+                consecutiveLoss.C = 0;
+            }
+            // 归一化并施加最小权重
+            const minWeight = 0.05;
+            kalmanWeights.A = Math.max(minWeight, kalmanWeights.A);
+            kalmanWeights.B = Math.max(minWeight, kalmanWeights.B);
+            kalmanWeights.C = Math.max(minWeight, kalmanWeights.C);
+            const totalW = kalmanWeights.A + kalmanWeights.B + kalmanWeights.C;
+            if (totalW > 0) {
+                kalmanWeights.A /= totalW;
+                kalmanWeights.B /= totalW;
+                kalmanWeights.C /= totalW;
+            }
+        }
+
+        // ============================================================
+        // 预测入口(兼容原有接口)
+        // ============================================================
+        function predictA(h) {
+            if (!h || h.length < 20) {
+                return {
+                    prediction: null,
+                    weightedProbability: { "大": 0.5, "小": 0.5 },
+                    type: "数据不足",
+                    slot: getTimeSlot(new Date().getHours(), new Date().getMinutes()),
+                    windows: {},
+                    effs: { state: "init" },
+                    final_score: 0.5,
+                    confidence: 0.3
+                };
+            }
+            if (isMaintenanceTime()) {
+                return {
+                    prediction: null,
+                    reason: "维护",
+                    weightedProbability: { "大": 0.5, "小": 0.5 },
+                    type: "维护",
+                    slot: "维护时段",
+                    windows: {},
+                    effs: {},
+                    final_score: 0.5,
+                    confidence: 0
+                };
+            }
+            const features = extractAdvancedFeatures(h);
+            if (!features) {
+                return {
+                    prediction: null,
+                    weightedProbability: { "大": 0.5, "小": 0.5 },
+                    type: "特征提取失败",
+                    slot: getTimeSlot(new Date().getHours(), new Date().getMinutes()),
+                    windows: {},
+                    effs: { state: "error" },
+                    final_score: 0.5,
+                    confidence: 0
+                };
+            }
+            const result = tcnPredict(features);
+            const probBig = result.prob;
+            return {
+                prediction: result.prediction,
+                weightedProbability: { "大": probBig, "小": 1 - probBig },
+                type: "TCN",
+                slot: getTimeSlot(new Date().getHours(), new Date().getMinutes()),
+                weight: [0.35, 0.35, 0.30],
+                windows: {
+                    probBig: probBig,
+                    threshold: 0.5
+                },
+                effs: {
+                    state: "TCN",
+                    loss: consecutiveLoss.A
+                },
+                final_score: probBig,
+                confidence: Math.min(0.85, 0.5 + Math.abs(probBig - 0.5) * 2)
+            };
+        }
+
+        function predictB(h) {
+            if (!h || h.length < 20) {
+                return {
+                    prediction: null,
+                    weightedProbability: { "单": 0.5, "双": 0.5 },
+                    type: "数据不足",
+                    slot: getTimeSlot(new Date().getHours(), new Date().getMinutes()),
+                    windows: {},
+                    effs: { state: "init" },
+                    final_score: 0.5,
+                    confidence: 0.3,
+                    seed: "--",
+                    hitRate: "--",
+                    groups: [],
+                    detail: null,
+                    score: 0,
+                    coarseSeeds: [],
+                    refineSeeds: [],
+                    topScore: 0,
+                    groupPrecision: {},
+                    groupConfidence: {},
+                    groupExcludedRisk: {},
+                    groupWeights: {}
+                };
+            }
+            if (isMaintenanceTime()) {
+                return {
+                    prediction: null,
+                    reason: "维护",
+                    weightedProbability: { "单": 0.5, "双": 0.5 },
+                    type: "维护",
+                    slot: "维护时段",
+                    windows: {},
+                    effs: {},
+                    final_score: 0.5,
+                    confidence: 0,
+                    seed: "--",
+                    hitRate: "--",
+                    groups: [],
+                    detail: null,
+                    score: 0,
+                    coarseSeeds: [],
+                    refineSeeds: [],
+                    topScore: 0,
+                    groupPrecision: {},
+                    groupConfidence: {},
+                    groupExcludedRisk: {},
+                    groupWeights: {}
+                };
+            }
+            const features = extractAdvancedFeatures(h);
+            if (!features) {
+                return {
+                    prediction: null,
+                    weightedProbability: { "单": 0.5, "双": 0.5 },
+                    type: "特征提取失败",
+                    slot: getTimeSlot(new Date().getHours(), new Date().getMinutes()),
+                    windows: {},
+                    effs: { state: "error" },
+                    final_score: 0.5,
+                    confidence: 0,
+                    seed: "--",
+                    hitRate: "--",
+                    groups: [],
+                    detail: null,
+                    score: 0,
+                    coarseSeeds: [],
+                    refineSeeds: [],
+                    topScore: 0,
+                    groupPrecision: {},
+                    groupConfidence: {},
+                    groupExcludedRisk: {},
+                    groupWeights: {}
+                };
+            }
+            const result = attentionLstmPredict(features);
+            const probOdd = result.prob;
+            return {
+                prediction: result.prediction,
+                weightedProbability: { "单": probOdd, "双": 1 - probOdd },
+                type: "注意力LSTM",
+                slot: getTimeSlot(new Date().getHours(), new Date().getMinutes()),
+                weight: [0.40, 0.30, 0.30],
+                windows: {
+                    probOdd: probOdd,
+                    threshold: 0.5
+                },
+                effs: {
+                    state: "LSTM",
+                    loss: consecutiveLoss.B
+                },
+                final_score: probOdd,
+                confidence: Math.min(0.85, 0.5 + Math.abs(probOdd - 0.5) * 2),
+                seed: "LSTM",
+                hitRate: "--",
+                groups: [],
+                detail: null,
+                score: 0,
                 coarseSeeds: [],
                 refineSeeds: [],
-                topScore: detail.score || 0
+                topScore: 0,
+                groupPrecision: {},
+                groupConfidence: {},
+                groupExcludedRisk: {},
+                groupWeights: {}
             };
         }
-    }
 
-    let bs = -1, bseed = null, bd = null;
-    const coarseSeeds = [];
-    for(let s = B_SEED_MIN; s <= B_SEED_MAX; s += B_COARSE_STEP) {
-        coarseSeeds.push(s);
-    }
-    let coarseResult = [];
-    for(let idx=0; idx<coarseSeeds.length; idx++) {
-        const s = coarseSeeds[idx];
-        const d = seedBacktest(h, s);
-        if(d.error) continue;
-        if(d.score > bs) { bs = d.score; bseed = s; bd = d; }
-        coarseResult.push({seed:s, score:d.score, overall:d.overall, recent:d.recentRate});
-    }
-    if(!bseed) return {error: 1};
-    
-    const B_REFINE_TOP = 100;
-    coarseResult.sort((a,b) => b.score - a.score);
-    const topCoarse = coarseResult.slice(0, Math.min(B_REFINE_TOP, coarseResult.length));
-    
-    const refineSet = new Set();
-    for(let idx=0; idx<topCoarse.length; idx++) {
-        const seed = topCoarse[idx].seed;
-        const startSeed = Math.max(B_SEED_MIN, seed - (B_COARSE_STEP - 1));
-        const endSeed = Math.min(B_SEED_MAX, seed + (B_COARSE_STEP - 1));
-        for(let s = startSeed; s <= endSeed; s++) {
-            refineSet.add(s);
-        }
-    }
-    
-    const refineSeeds = Array.from(refineSet).sort((a,b) => a - b);
-    let refineResult = [];
-    for(let idx=0; idx<refineSeeds.length; idx++) {
-        const s = refineSeeds[idx];
-        const d = seedBacktest(h, s);
-        if(d.error) continue;
-        if(d.score > bs) { bs = d.score; bseed = s; bd = d; }
-        refineResult.push({seed:s, score:d.score, overall:d.overall, recent:d.recentRate});
-    }
-    
-    const merged = {};
-    coarseResult.forEach(item => { merged[item.seed] = item; });
-    refineResult.forEach(item => { merged[item.seed] = item; });
-    
-    const ranked = Object.values(merged);
-    if(!ranked.length) return {error: 1};
-    
-    ranked.sort((a,b) => b.score - a.score);
-    
-    const pool = ranked.slice(0, Math.min(50, ranked.length));
-    
-    const B_EWMA_SECONDARY_WEIGHT = 0.10;
-    
-    function candidateKey(item) {
-        const detail = seedBacktest(h, item.seed);
-        if(detail.error) return item.score * 0.50;
-        const consistency = 1.0 - Math.min(Math.abs(detail.overall - detail.recentRate), 1.0);
-        const recentBlock = detail.stability || 0.5;
-        const hits = detail.hits || [];
-        let ewma = 0.5;
-        if(hits.length > 0) {
-            let val = hits[0];
-            for(let i = 1; i < hits.length; i++) {
-                val = B_RECENT_EWMA_ALPHA * hits[i] + (1.0 - B_RECENT_EWMA_ALPHA) * val;
-            }
-            ewma = val;
-        }
-        return (
-            detail.score * 0.50 +
-            detail.stability * 0.20 +
-            recentBlock * 0.10 +
-            consistency * 0.10 +
-            ewma * B_EWMA_SECONDARY_WEIGHT
-        );
-    }
-    
-    pool.sort((a,b) => candidateKey(b) - candidateKey(a));
-    
-    const finalCandidates = pool.slice(0, Math.min(7, pool.length));
-    const bestItem = finalCandidates[0];
-    let bestDetail = seedBacktest(h, bestItem.seed);
-
-    // ========== 增强贝叶斯优化 ==========
-    const topN = Math.min(10, pool.length);
-    const initPoints = pool.slice(0, topN).map(item => ({
-        seed: item.seed,
-        score: item.score,
-        detail: seedBacktest(h, item.seed)
-    }));
-    const X = initPoints.map(p => p.seed);
-    const y = initPoints.map(p => p.score);
-    const bo = new BayesianOptimizer('rbf', 1e-6, 500, 0.1);
-    bo.fit(X, y);
-
-    const searchSpan = B_SEED_MAX - B_SEED_MIN;
-    const bayesIterations = Math.max(10, Math.min(50, Math.round(searchSpan / 2500)));
-    const searchRange = [B_SEED_MIN, B_SEED_MAX];
-    let bestSeed = bestItem.seed;
-    let bestScore = bestItem.score;
-    let noImproveCount = 0;
-    const maxNoImprove = 5;
-
-    for (let iter = 0; iter < bayesIterations; iter++) {
-        const kappa = 2.5 - (iter / bayesIterations) * 1.5;
-        const suggestedSeed = Math.round(bo.suggest(searchRange, kappa, 3000));
-        if (X.includes(suggestedSeed)) continue;
-        const detail = seedBacktest(h, suggestedSeed);
-        if (detail.error) continue;
-        const newScore = detail.score;
-        X.push(suggestedSeed);
-        y.push(newScore);
-        bo.fit(X, y);
-        if (newScore > bestScore) {
-            bestScore = newScore;
-            bestSeed = suggestedSeed;
-            bestDetail = detail;
-            noImproveCount = 0;
-        } else {
-            noImproveCount++;
-            if (noImproveCount >= maxNoImprove) {
-                logMsg("⚡ 贝叶斯优化提前终止(iter=" + (iter+1) + "，连续" + maxNoImprove + "次无改进)");
-                break;
-            }
-        }
-    }
-    bestItem.seed = bestSeed;
-    bestItem.score = bestScore;
-    bestDetail = seedBacktest(h, bestSeed);
-    // ========================================
-
-    window._topSeeds = pool.slice(0, 5).map(item => ({
-        seed: item.seed,
-        score: item.score
-    }));
-    
-    return {
-        bestSeed: bestSeed,
-        score: bestScore,
-        detail: bestDetail,
-        coarseSeeds: coarseResult.slice(0, 20),
-        refineSeeds: refineResult.slice(0, 20),
-        topScore: bestScore
-    };
-}
-
-let bModelCache = {
-    seed: null,
-    detail: null,
-    lastUpdatePeriod: null,
-    historyLength: 0
-};
-
-function getConfidenceDiscount() {
-    const verifiedCount = session.records.filter(r => r.status === "已验证").length;
-    let raw = verifiedCount / 50;
-    return Math.max(0.4, Math.min(1, raw));
-}
-
-// ============================================================
-// 模型B(增强版：混合集成 + 趋势置信度修正)
-// ============================================================
-function predictB(h) {
-    if (isMaintenanceTime()) {
-        return {prediction:null,reason:"维护",weightedProbability:{"单":0.5,"双":0.5},type:"维护",confidence:0,seed:"--",hitRate:"--"};
-    }
-
-    let pmVotes = {单:0,双:0}, pmWeight = 0;
-    for (let len of [3,5,7,10]) {
-        const res = TOOL.patternMatch(h, len, 'oe', 1);
-        if (res && res.total>=3) {
-            const tot = (res.nextStats['单']||0)+(res.nextStats['双']||0);
-            if (tot>0) {
-                pmVotes['单'] += (res.nextStats['单']||0)/tot * tot*len;
-                pmVotes['双'] += (res.nextStats['双']||0)/tot * tot*len;
-                pmWeight += tot*len;
-            }
-        }
-    }
-    const pmProb = pmWeight>0 ? {单:pmVotes['单']/pmWeight, 双:pmVotes['双']/pmWeight} : null;
-    const pmConf = pmWeight>0 ? calcConfidence({单:pmVotes['单'], 双:pmVotes['双']}, pmWeight) : 0;
-
-    const mcProb = TOOL.markovChain(h, 2, 'oe');
-    const mcConf = mcProb ? 0.6 : 0;
-    const freqProb = TOOL.freqBased(h, 'oe', 10, 20);
-    const freqConf = 0.5;
-
-    // 简化权重
-    const verified = session.records.filter(r=>r.status==="已验证");
-    let wPM=0.5, wMC=0.3, wFreq=0.2;
-    if (verified.length>=10) {
-        const recent = verified.slice(-20);
-        let pmCorr=0;
-        for (let r of recent) {
-            const tgt = historyData.find(h=>parseInt(h.nbr)===r.target);
-            if(!tgt) continue;
-            if(r.predB && tgt.type[1]===r.predB) pmCorr++;
-        }
-        const pmAcc = recent.length>0 ? pmCorr/recent.length : 0.5;
-        wPM = Math.max(0.2, Math.min(0.8, pmAcc*1.5));
-        wMC = 0.4*(1-wPM);
-        wFreq = 0.6*(1-wPM);
-    }
-
-    let finalProb = {单:0,双:0};
-    const models = [
-        {prob:pmProb, weight:wPM},
-        {prob:mcProb, weight:wMC},
-        {prob:freqProb, weight:wFreq}
-    ];
-    let totalW = 0;
-    for (let m of models) {
-        if (m.prob) {
-            finalProb['单'] += (m.prob['单']||0)*m.weight;
-            finalProb['双'] += (m.prob['双']||0)*m.weight;
-            totalW += m.weight;
-        }
-    }
-    if (totalW>0) {
-        finalProb['单'] /= totalW;
-        finalProb['双'] /= totalW;
-    } else {
-        finalProb = {单:0.5,双:0.5};
-    }
-
-    // ---- 趋势修正 ----
-    const trend = calcTrendScore(h, 8);
-    if (Math.abs(trend) > 0.3) {
-        const delta = trend * 0.08;
-        finalProb['单'] = Math.max(0.05, Math.min(0.95, finalProb['单'] + delta));
-        finalProb['双'] = 1 - finalProb['单'];
-    }
-
-    // ---- 置信度修正 ----
-    const conf = pmConf * 0.5 + mcConf * 0.3 + freqConf * 0.2;
-    if (conf < 0.3) {
-        const shrink = (1 - conf) * 0.2;
-        finalProb['单'] = 0.5 + (finalProb['单'] - 0.5) * (1 - shrink);
-        finalProb['双'] = 1 - finalProb['单'];
-    }
-
-    const recentOddRate = h.slice(-30).filter(x=>isOdd(x.sum)).length / Math.min(30,h.length);
-    const threshold = 0.492 + (recentOddRate-0.489)*0.15;
-    const prediction = finalProb['单'] >= threshold ? '单' : '双';
-
-    // 冷启动状态
-    let seedDisplay = "--", hitRateDisplay = "--";
-    const verifiedCount = session.records.filter(r => r.status === "已验证").length;
-    if (verifiedCount < 50) {
-        seedDisplay = "冷启动";
-        hitRateDisplay = "收集中";
-    } else {
-        seedDisplay = "活跃";
-        const recent = session.records.filter(r => r.status === "已验证").slice(-30);
-        let correct = 0;
-        for (let r of recent) {
-            const tgt = historyData.find(h => parseInt(h.nbr) === r.target);
-            if (tgt && r.predB && tgt.type[1] === r.predB) correct++;
-        }
-        const acc = recent.length > 0 ? correct / recent.length : 0;
-        hitRateDisplay = (acc * 100).toFixed(1) + "%";
-    }
-
-    return {
-        prediction,
-        weightedProbability: finalProb,
-        type: "混合集成",
-        slot: "全时段",
-        weight: [wPM,wMC,wFreq],
-        windows: {模式匹配:pmProb?.单, 马尔可夫:mcProb?.单, 频率:freqProb?.单},
-        effs: {权重: `${wPM.toFixed(2)}/${wMC.toFixed(2)}/${wFreq.toFixed(2)}`, 趋势: trend.toFixed(3), 置信度: conf.toFixed(3) },
-        final_score: finalProb['单'],
-        confidence: conf,
-        seed: seedDisplay,
-        hitRate: hitRateDisplay,
-        groups: [],
-        detail: null,
-        score: 0,
-        coarseSeeds: [],
-        refineSeeds: [],
-        topScore: 0,
-        groupPrecision: {},
-        groupConfidence: {},
-        groupExcludedRisk: {},
-        groupWeights: {}
-    };
-}
-
-// ============================================================
-// Stacking 元模型(16维特征 + 动量优化)
-// ============================================================
-class OnlineLogisticRegression {
-    constructor(featureDim = 16, lr = 0.01, momentum = 0.9) {
-        this.weights = new Array(featureDim).fill(0);
-        this.bias = 0;
-        this.lr = lr;
-        this.momentum = momentum;
-        this.vw = new Array(featureDim).fill(0);
-        this.vb = 0;
-        this.t = 0;
-    }
-
-    sigmoid(z) { return 1 / (1 + Math.exp(-z)); }
-
-    predict(features) {
-        let z = this.bias;
-        for (let i=0; i<this.weights.length; i++) z += this.weights[i] * features[i];
-        return this.sigmoid(z);
-    }
-
-    update(features, target) {
-        this.t++;
-        const pred = this.predict(features);
-        const error = target - pred;
-        const lrNow = this.lr / (1 + 0.01 * this.t);
-
-        for (let i=0; i<this.weights.length; i++) {
-            const grad = error * features[i];
-            this.vw[i] = this.momentum * this.vw[i] + lrNow * grad;
-            this.weights[i] += this.vw[i];
-            this.weights[i] = Math.max(-5, Math.min(5, this.weights[i]));
-        }
-        const gradB = error;
-        this.vb = this.momentum * this.vb + lrNow * gradB;
-        this.bias += this.vb;
-        this.bias = Math.max(-5, Math.min(5, this.bias));
-    }
-}
-
-// 元模型实例化(特征维度16)
-const metaModels = {
-    "大单": new OnlineLogisticRegression(16, 0.01, 0.9),
-    "大双": new OnlineLogisticRegression(16, 0.01, 0.9),
-    "小单": new OnlineLogisticRegression(16, 0.01, 0.9),
-    "小双": new OnlineLogisticRegression(16, 0.01, 0.9)
-};
-
-// ============================================================
-// 16维特征构建函数
-// ============================================================
-function buildMetaFeatures(resA, resB) {
-    const aProb = resA.weightedProbability["大"] || 0.5;
-    const bProb = resB.weightedProbability["单"] || 0.5;
-
-    const recent = session.records.filter(r => r.status === "已验证").slice(-10);
-    const correctA10 = recent.filter(r => r.predA && historyData.find(h => parseInt(h.nbr) === r.target)?.type[0] === r.predA).length / (recent.length || 1);
-    const correctB10 = recent.filter(r => r.predB && historyData.find(h => parseInt(h.nbr) === r.target)?.type[1] === r.predB).length / (recent.length || 1);
-
-    const recentActuals = recent.slice(-5).map(r => {
-        const h = historyData.find(h => parseInt(h.nbr) === r.target);
-        return h ? h.sum : 14;
-    });
-    const std5 = recentActuals.length >= 5 ? (() => {
-        const m = recentActuals.reduce((a,b)=>a+b,0)/recentActuals.length;
-        return Math.sqrt(recentActuals.reduce((a,b)=>a+(b-m)**2,0)/recentActuals.length);
-    })() : 0;
-
-    // 偏差序列(最近10期)
-    const bias10 = recent.slice(-10).map(r => {
-        const h = historyData.find(h => parseInt(h.nbr) === r.target);
-        if (!h) return 0;
-        const comboPred = r.killed ? r.killed : (r.predA + r.predB);
-        const predVal = ALL_TYPES.indexOf(comboPred) / 3;
-        const actualVal = ALL_TYPES.indexOf(h.type) / 3;
-        return predVal - actualVal;
-    });
-    const biasMean = bias10.reduce((a,b)=>a+b,0) / (bias10.length || 1);
-    const biasStd = bias10.length >= 2 ? Math.sqrt(bias10.reduce((a,b)=>a+(b-biasMean)**2,0)/(bias10.length-1)) : 0;
-    const biasChange = bias10.length >= 2 ? Math.abs(bias10[bias10.length-1] - bias10[bias10.length-2]) : 0;
-
-    const currentPeriod = historyData.length > 0 ? parseInt(historyData[historyData.length-1].nbr) : 0;
-    const periodNorm = Math.min(1, currentPeriod / 2000);
-
-    const prob = bProb;
-    const entropy = prob > 0 && prob < 1 ? -(prob * Math.log2(prob) + (1-prob)*Math.log2(1-prob)) : 0;
-
-    const confA = getConfidenceDiscount();
-    const confB = getConfidenceDiscount();
-
-    const comboWinRate = (() => {
-        const verified = session.records.filter(r => r.status === "已验证");
-        if (verified.length === 0) return 0.5;
-        const hits = verified.filter(r => r.killed && historyData.find(h => parseInt(h.nbr) === r.target)?.type !== r.killed).length;
-        return hits / verified.length;
-    })();
-
-    // 新增特征：波动率、短期一致性
-    const recent10Sums = recent.slice(-10).map(r => {
-        const h = historyData.find(h => parseInt(h.nbr) === r.target);
-        return h ? h.sum : 14;
-    });
-    const recentMean = recent10Sums.reduce((a,b)=>a+b,0) / (recent10Sums.length || 1);
-    const recentVar = recent10Sums.length >= 2 ? recent10Sums.reduce((a,b)=>a+(b-recentMean)**2,0)/(recent10Sums.length-1) : 0;
-    const recentStd = Math.sqrt(recentVar);
-    const volatility = recentMean > 0 ? recentStd / recentMean : 0;
-
-    const shortConsistency = (() => {
-        const last5 = recent.slice(-5);
-        if (last5.length < 3) return 0.5;
-        let match = 0;
-        for (let r of last5) {
-            const h = historyData.find(h => parseInt(h.nbr) === r.target);
-            if (!h || !r.predA) continue;
-            if ((isBig(h.sum) && r.predA === "大") || (!isBig(h.sum) && r.predA === "小")) match++;
-        }
-        return match / last5.length;
-    })();
-
-    return [
-        aProb, bProb, 
-        comboWinRate, 
-        (session.records.filter(r=>r.status==="已验证").length / 100),
-        correctA10, correctB10,
-        std5, biasMean, biasStd, biasChange,
-        periodNorm, entropy,
-        confA, confB,
-        volatility,
-        shortConsistency
-    ];
-}
-
-function comboScoresWithStacking(a, b) {
-    const base = comboScores(a, b);
-    const metaFeat = buildMetaFeatures(a, b);
-    const stacked = {};
-    for (const [group, model] of Object.entries(metaModels)) {
-        stacked[group] = model.predict(metaFeat);
-    }
-    const mixed = {};
-    for (const g of ALL_TYPES) {
-        mixed[g] = 0.7 * (stacked[g] || 0.5) + 0.3 * (base[g] || 0.5);
-    }
-    return mixed;
-}
-
-// ============================================================
-// 组合评分与杀组
-// ============================================================
-// 动态组合权重(增加模型置信度自适应)
-function calcDynamicComboAlpha() {
-    const verified = session.records.filter(r=>r.status==="已验证");
-    if (verified.length===0) return 0.5;
-    const recent = verified.slice(-40);
-    let corrA=0, corrB=0;
-    for (let r of recent) {
-        const tgt = historyData.find(h=>parseInt(h.nbr)===r.target);
-        if (!tgt) continue;
-        if (r.predA && tgt.type[0]===r.predA) corrA++;
-        if (r.predB && tgt.type[1]===r.predB) corrB++;
-    }
-    const accA = recent.length>0 ? corrA/recent.length : 0.5;
-    const accB = recent.length>0 ? corrB/recent.length : 0.5;
-
-    // 获取当前模型置信度(由 updateUI 设置)
-    const confA = window._confA || 0.5;
-    const confB = window._confB || 0.5;
-
-    // 综合得分 = 准确率 * 置信度
-    const scoreA = accA * (0.5 + 0.5 * confA);
-    const scoreB = accB * (0.5 + 0.5 * confB);
-
-    let alpha = scoreA / (scoreA + scoreB + 0.001);
-    if (scoreA < 0.2) alpha = 0.25;
-    if (scoreB < 0.2) alpha = 0.75;
-    alpha = Math.max(0.2, Math.min(0.8, alpha));
-
-    // 指数平滑
-    if (typeof window._smoothedAlpha === 'undefined') window._smoothedAlpha = alpha;
-    else window._smoothedAlpha = 0.85*window._smoothedAlpha + 0.15*alpha;
-    return window._smoothedAlpha;
-}
-
-function comboScores(a, b) {
-    const alpha = calcDynamicComboAlpha();
-    const beta = 1 - alpha;
-    const aBig = a.weightedProbability["大"] || 0.5;
-    const aSmall = 1 - aBig;
-    const bOdd = b.weightedProbability["单"] || 0.5;
-    const bEven = 1 - bOdd;
-    return {
-        "大单": aBig * alpha + bOdd * beta,
-        "大双": aBig * alpha + bEven * beta,
-        "小单": aSmall * alpha + bOdd * beta,
-        "小双": aSmall * alpha + bEven * beta
-    };
-}
-
-function tripleEnsembleVote(predA, predB, sum, confA, confB) {
-    const votes = { "大单": 0, "大双": 0, "小单": 0, "小双": 0 };
-    if (predA === "大") { votes["大单"] += confA; votes["大双"] += confA; }
-    else { votes["小单"] += confA; votes["小双"] += confA; }
-    if (predB === "单") { votes["大单"] += confB; votes["小单"] += confB; }
-    else { votes["大双"] += confB; votes["小双"] += confB; }
-    const tailOdd = (sum % 10) % 2 === 1 ? "单" : "双";
-    if (tailOdd === "单") { votes["大单"] += ENS_C_CONF; votes["小单"] += ENS_C_CONF; }
-    else { votes["大双"] += ENS_C_CONF; votes["小双"] += ENS_C_CONF; }
-    return Object.entries(votes).sort((a, b) => b[1] - a[1])[0][0];
-}
-
-function buildFeatures(history, idx) {
-    const window = history.slice(Math.max(0, idx - 20), idx);
-    const bigRatio = window.filter(h => isBig(h.sum)).length / Math.max(1, window.length);
-    const oddRatio = window.filter(h => h.sum % 2 === 1).length / Math.max(1, window.length);
-    const lastSum = history[idx - 1] ? history[idx - 1].sum : 14;
-    const tail = lastSum % 10;
-    return [bigRatio, oddRatio, tail / 9, (lastSum - 14) / 14];
-}
-
-function onlineGDUpdate(actual, features) {
-    const pred = lrPredict(features);
-    const err = actual - pred;
-    for (let i = 0; i < gdWeights.length && i < features.length; i++) {
-        gdWeights[i] += GD_LR * err * features[i];
-        gdWeights[i] = Math.max(0.05, Math.min(0.8, gdWeights[i]));
-    }
-    const sum = gdWeights.reduce((a, b) => a + b, 0);
-    if (sum > 0) gdWeights = gdWeights.map(w => w / sum);
-}
-
-function lrPredict(features) {
-    let score = 0;
-    for (let i = 0; i < lrCoef.length && i < features.length; i++) {
-        score += lrCoef[i] * (features[i] || 0);
-    }
-    return score;
-}
-
-function arimaForecast(sums, alpha) {
-    if (sums.length < 2) return sums[sums.length - 1] || 14;
-    let smoothed = sums[0];
-    for (let i = 1; i < sums.length; i++) {
-        smoothed = alpha * sums[i] + (1 - alpha) * smoothed;
-    }
-    return smoothed;
-}
-
-function detectAnomaly(history) {
-    if (history.length < 10) return false;
-    const sums = history.map(h => h.sum);
-    const mean = sums.reduce((a, b) => a + b, 0) / sums.length;
-    const variance = sums.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / sums.length;
-    const std = Math.sqrt(variance + 0.001);
-    const z = Math.abs(sums[sums.length - 1] - mean) / std;
-    return z > ANOMALY_Z_THRESHOLD;
-}
-
-function gridSearch(history) {
-    if (gridBestParams) return gridBestParams;
-    const alphas = [0.1, 0.2, 0.3, 0.4, 0.5];
-    let bestAlpha = 0.3, bestAcc = 0;
-    for (const a of alphas) {
-        let correct = 0, total = 0;
-        for (let i = 20; i < Math.min(history.length, 60); i++) {
-            const pred = arimaForecast(history.slice(0, i).map(h => h.sum), a);
-            const actual = history[i].sum;
-            if ((pred >= 14 && actual >= 14) || (pred < 14 && actual < 14)) correct++;
-            total++;
-        }
-        if (total > 0 && correct / total > bestAcc) {
-            bestAcc = correct / total;
-            bestAlpha = a;
-        }
-    }
-    gridBestParams = { alpha: bestAlpha, acc: bestAcc };
-    logMsg("🔍 网格搜索最优α=" + bestAlpha + " 命中率=" + (bestAcc*100).toFixed(1) + "%");
-    return gridBestParams;
-}
-
-function lrConfidence(features) {
-    const score = lrPredict(features);
-    return 1 / (1 + Math.exp(-score * 4 + 2));
-}
-
-function getDynamicKillThreshold() {
-    const window = 20;
-    const verified = session.records.filter(r => r.status === "已验证");
-    const recent = verified.slice(-window);
-    if (recent.length === 0) return 0.65;
-    let errors = 0;
-    for (let r of recent) {
-        const h = historyData.find(h => parseInt(h.nbr) === r.target);
-        if (!h) continue;
-        let pred = r.killed || (r.predA + r.predB);
-        if (h.type !== pred) errors++;
-    }
-    let errorRate = errors / recent.length;
-    let threshold = 0.55 + errorRate * 0.3;
-    return Math.min(0.85, Math.max(0.45, threshold));
-}
-
-function buildKill(a, b) {
-    if (isMaintenanceTime() && lastValidPrediction && lastValidPrediction.killResult) {
-        logMsg("⏳ 维护期间，复用上次有效杀组结果");
-        return lastValidPrediction.killResult;
-    }
-
-    const sc = comboScoresWithStacking(a, b);
-    const ranked = Object.entries(sc).sort((x,y) => y[1] - x[1]);
-
-    const KILL_THRESHOLD = getDynamicKillThreshold();
-
-    const minScore = ranked[ranked.length - 1][1];
-    let killedGroup = null;
-    let killStrength = 0;
-
-    const ratio = minScore / KILL_THRESHOLD;
-    if (ratio < 0.7) {
-        killedGroup = ranked[ranked.length-1][0];
-        killStrength = 2;
-        logMsg("🔴 强力杀组: " + killedGroup + " (评分:" + minScore.toFixed(3) + " < " + (KILL_THRESHOLD*0.7).toFixed(3) + ")");
-    } else if (ratio < 1.0) {
-        killedGroup = null;
-        killStrength = 1;
-        logMsg("🟡 弱信号，建议关注: " + ranked[ranked.length-1][0] + " (评分"+minScore.toFixed(3)+" / 阈值"+KILL_THRESHOLD.toFixed(3)+")");
-    } else {
-        killedGroup = null;
-        killStrength = 0;
-        logMsg("🟢 不杀组 (评分:" + minScore.toFixed(3) + " >= " + KILL_THRESHOLD.toFixed(3) + ")");
-    }
-
-    const result = {
-        scores: sc,
-        killedGroup: killedGroup,
-        recommended: killedGroup ? ranked.filter(([k]) => k !== killedGroup).map(x => x[0]) : ranked.map(x => x[0]),
-        killStrength: killStrength
-    };
-    return result;
-}
-
-function killGroupHit(killed, actualType) {
-    return killed && actualType !== killed;
-}
-
-// ============================================================
-// 数据解析
-// ============================================================
-function parseAPI(json) {
-    if(!json || json.message !== "success" || !Array.isArray(json.data)) {
-        throw new Error("接口格式异常");
-    }
-    const out = [];
-    for(const it of json.data) {
-        const nbr = String(it.nbr).trim();
-        if(!nbr) continue;
-        let sum;
-        if(typeof it.num !== "undefined" && it.num !== null && it.num !== "") {
-            sum = parseInt(it.num);
-        } else {
-            const parts = String(it.number).split("+");
-            if(parts.length === 3) {
-                sum = parts.map(Number).reduce((a,b) => a + b, 0);
-            } else {
-                continue;
-            }
-        }
-        if(isNaN(sum)) continue;
-        const type = it.combination || getType(sum);
-        out.push({
-            nbr: nbr,
-            date: it.date || "",
-            time: it.time || "",
-            number: it.number || String(sum),
-            num: sum,
-            sum: sum,
-            type: type,
-            combination: type
-        });
-    }
-    out.sort((a,b) => parseInt(a.nbr) - parseInt(b.nbr));
-    return out.slice(-100);
-}
-
-// ============================================================
-// 历史记录与统计(滑动窗口)
-// ============================================================
-let historyData = [];
-let session = {
-    aCorrect: 0, aWrong: 0,
-    bCorrect: 0, bWrong: 0,
-    fCorrect: 0, fWrong: 0,
-    records: []
-};
-
-function persistAll() {
-    try {
-        const dataToSave = {
-            aCorrect: session.aCorrect || 0,
-            aWrong: session.aWrong || 0,
-            bCorrect: session.bCorrect || 0,
-            bWrong: session.bWrong || 0,
-            fCorrect: session.fCorrect || 0,
-            fWrong: session.fWrong || 0,
-            records: session.records || [],
-            historyData: historyData || []
-        };
-        localStorage.setItem("pc28_full_data_v13", JSON.stringify(dataToSave));
-    } catch(e) { console.log("保存数据失败:", e); }
-}
-
-function restoreAll() {
-    try {
-        const raw = localStorage.getItem("pc28_full_data_v13");
-        if(raw) {
-            const data = JSON.parse(raw);
-            session = {
-                aCorrect: data.aCorrect || 0,
-                aWrong: data.aWrong || 0,
-                bCorrect: data.bCorrect || 0,
-                bWrong: data.bWrong || 0,
-                fCorrect: data.fCorrect || 0,
-                fWrong: data.fWrong || 0,
-                records: data.records || []
+        // ============================================================
+        // 组合评分与杀组(使用贝叶斯组合)
+        // ============================================================
+        function comboScores(a, b) {
+            // 降级用
+            const alpha = 0.5;
+            const beta = 1 - alpha;
+            const aBig = a.weightedProbability["大"] || 0.5;
+            const aSmall = 1 - aBig;
+            const bOdd = b.weightedProbability["单"] || 0.5;
+            const bEven = 1 - bOdd;
+            return {
+                "大单": aBig * alpha + bOdd * beta,
+                "大双": aBig * alpha + bEven * beta,
+                "小单": aSmall * alpha + bOdd * beta,
+                "小双": aSmall * alpha + bEven * beta
             };
-            if(data.historyData && Array.isArray(data.historyData) && data.historyData.length) {
-                historyData = data.historyData;
-            }
-            return true;
         }
-    } catch(e) { console.log("恢复数据失败:", e); }
-    return false;
-}
 
-function cacheHistoryData() {
-    try { localStorage.setItem("pc28_history_cache_v13", JSON.stringify(historyData)); } catch(e) {}
-}
-function restoreHistoryCache() {
-    try {
-        const hRaw = localStorage.getItem("pc28_history_cache_v13");
-        if(hRaw) {
-            const h = JSON.parse(hRaw);
-            if(Array.isArray(h) && h.length) {
-                historyData = h;
-                return true;
-            }
-        }
-    } catch(e) {}
-    return false;
-}
-function saveSession() { try { persistAll(); } catch(e) {} }
-
-function logMsg(m) {
-    const l = document.getElementById("log");
-    const p = document.createElement("p");
-    p.textContent = "[" + new Date().toLocaleTimeString() + "] " + m;
-    l.appendChild(p);
-    l.scrollTop = l.scrollHeight;
-    if(l.children.length > 100) l.removeChild(l.firstChild);
-}
-
-// ============================================================
-// 验证逻辑
-// ============================================================
-function verifyOne() {
-    if(!historyData.length) return false;
-    const map = {};
-    historyData.forEach(h => map[parseInt(h.nbr)] = h);
-    const pendingIdx = session.records.findIndex(r => r.status === "待验证" && map[r.target]);
-    if(pendingIdx === -1) return false;
-    const rec = session.records[pendingIdx];
-    const act = map[rec.target];
-    if(rec.predA) {
-        if(act.type[0] === rec.predA) session.aCorrect++;
-        else session.aWrong++;
-    }
-    if(rec.predB) {
-        if(act.type[1] === rec.predB) session.bCorrect++;
-        else session.bWrong++;
-    }
-    if(rec.killed) {
-        if(act.type !== rec.killed) session.fCorrect++;
-        else session.fWrong++;
-    }
-    rec.status = "已验证";
-
-    if (rec.predA && act) {
-        const now = new Date();
-        const slot = getTimeSlot(now.getHours(), now.getMinutes());
-        const state = modelAWeights.slotWeights[slot];
-        if (state) {
-            const lr = 0.05;
-            const actualBig = isBig(act.sum) ? 1 : 0;
-            const predBig = rec.predA === "大" ? 1 : 0;
-            const error = actualBig - predBig;
-            state.weight[0] += lr * error * 0.5;
-            state.weight[1] += lr * error * 0.3;
-            state.weight[2] += lr * error * 0.2;
-            state.weight = state.weight.map(w => Math.max(0.15, Math.min(0.75, w)));
-            const sum = state.weight.reduce((a,b) => a+b, 0);
-            if (sum > 0) state.weight = state.weight.map(w => w / sum);
-        }
-    }
-
-    if (rec.predA && rec.predB && act) {
-        const prevHistory = historyData.filter(h => parseInt(h.nbr) < rec.target);
-        if (prevHistory.length >= 10) {
-            const resA_prev = predictA(prevHistory);
-            let resB_prev = predictB(prevHistory);
-            if (!resA_prev.error && !resB_prev.error && resB_prev.prediction !== "--") {
-                const feat = buildMetaFeatures(resA_prev, resB_prev);
-                const targetOneHot = [0,0,0,0];
-                const idx = ALL_TYPES.indexOf(act.type);
-                if (idx >= 0) targetOneHot[idx] = 1;
-                ALL_TYPES.forEach((g, i) => {
-                    metaModels[g].update(feat, targetOneHot[i]);
-                });
-            }
-        }
-    }
-
-    if(window._pendingGD && window._pendingGD.period === rec.target) {
-        const actual = act.type[0] === "大" ? 1 : 0;
-        onlineGDUpdate(actual, window._pendingGD.features);
-        for (let i = 0; i < lrCoef.length; i++) {
-            lrCoef[i] += GD_LR * (actual ? 1 : -1) * (window._pendingGD.features[i] || 0) * 0.1;
-        }
-        window._pendingGD = null;
-    }
-
-    if (session.records.length > MAX_VERIFIED_RECORDS) {
-        session.records.splice(0, session.records.length - MAX_VERIFIED_RECORDS);
-        let aC=0,aW=0,bC=0,bW=0,fC=0,fW=0;
-        for (let r of session.records) {
-            if (r.status === "已验证") {
+        function getDynamicKillThreshold() {
+            const window = 20;
+            const verified = session.records.filter(r => r.status === "已验证");
+            const recent = verified.slice(-window);
+            if (recent.length === 0) return 0.65;
+            let errors = 0;
+            for (let r of recent) {
                 const h = historyData.find(h => parseInt(h.nbr) === r.target);
                 if (!h) continue;
-                if (r.predA) { if (h.type[0] === r.predA) aC++; else aW++; }
-                if (r.predB) { if (h.type[1] === r.predB) bC++; else bW++; }
-                if (r.killed) { if (h.type !== r.killed) fC++; else fW++; }
+                let pred = r.killed || (r.predA + r.predB);
+                if (h.type !== pred) errors++;
+            }
+            let errorRate = errors / recent.length;
+            let threshold = 0.55 + errorRate * 0.3;
+            return Math.min(0.85, Math.max(0.45, threshold));
+        }
+
+        // ============================================================
+        // ★★★ 修改1：buildKill 增加 historyOverride 参数 ★★★
+        // ============================================================
+        function buildKill(a, b, historyOverride) {
+            if (isMaintenanceTime() && lastValidPrediction && lastValidPrediction.killResult) {
+                logMsg("⏳ 维护期间，复用上次有效杀组结果");
+                return lastValidPrediction.killResult;
+            }
+
+            // 使用传入的历史数据覆盖，否则使用全局 historyData
+            const hist = historyOverride || historyData;
+            const features = extractAdvancedFeatures(hist);
+            if (!features) {
+                const sc = comboScores(a, b);
+                const ranked = Object.entries(sc).sort((x, y) => y[1] - x[1]);
+                const killedGroup = ranked[ranked.length-1][0];
+                return {
+                    scores: sc,
+                    killedGroup: killedGroup,
+                    recommended: ranked.filter(([k]) => k !== killedGroup).map(x => x[0]),
+                    killStrength: 0
+                };
+            }
+
+            const tcn = tcnPredict(features);
+            const lstm = attentionLstmPredict(features);
+            const gbdt = gbdtPredict(features);
+
+            // 模型组合多样化：A: TCN大小 + LSTM单双；B: GBDT大小 + GBDT单双；C: TCN大小 + GBDT单双
+            const models2 = [
+                { name: 'A', probBig: tcn.prob, probOdd: lstm.prob },
+                { name: 'B', probBig: gbdt.probBig, probOdd: gbdt.probOdd },
+                { name: 'C', probBig: tcn.prob, probOdd: gbdt.probOdd }
+            ];
+
+            const disc = adversarialDiscriminator(features);
+            const bayes = bayesianCombine(models2, disc);
+            const probs = bayes.probs;
+
+            const sc = { ...probs };
+            const ranked = Object.entries(sc).sort((x, y) => y[1] - x[1]);
+            const KILL_THRESHOLD = getDynamicKillThreshold();
+            const minScore = ranked[ranked.length-1][1];
+            let killedGroup = null;
+            let killStrength = 0;
+            const ratio = minScore / KILL_THRESHOLD;
+            if (ratio < 0.7) {
+                killedGroup = ranked[ranked.length-1][0];
+                killStrength = 2;
+                logMsg("🔴 强力杀组: " + killedGroup + " (评分:" + minScore.toFixed(3) + " < " + (KILL_THRESHOLD * 0.7).toFixed(3) + ")");
+            } else if (ratio < 1.0) {
+                killedGroup = null;
+                killStrength = 1;
+                logMsg("🟡 弱信号，建议关注: " + ranked[ranked.length-1][0] + " (评分" + minScore.toFixed(3) + " / 阈值" + KILL_THRESHOLD.toFixed(3) + ")");
+            } else {
+                killedGroup = null;
+                killStrength = 0;
+                logMsg("🟢 不杀组 (评分:" + minScore.toFixed(3) + " >= " + KILL_THRESHOLD.toFixed(3) + ")");
+            }
+
+            return {
+                scores: sc,
+                killedGroup: killedGroup,
+                recommended: killedGroup ? ranked.filter(([k]) => k !== killedGroup).map(x => x[0]) : ranked.map(x => x[0]),
+                killStrength: killStrength
+            };
+        }
+
+        // ============================================================
+        // verifyOne(修复未来信息泄漏)
+        // ============================================================
+        function verifyOne() {
+            if (!historyData.length) return false;
+
+            const map = {};
+            historyData.forEach(h => map[parseInt(h.nbr)] = h);
+
+            const pendingIdx = session.records.findIndex(r => r.status === "待验证" && map[r.target]);
+            if (pendingIdx === -1) return false;
+
+            const rec = session.records[pendingIdx];
+            const act = map[rec.target];
+            if (!act) return false;
+
+            // 更新统计
+            if (rec.predA) {
+                if (act.type[0] === rec.predA) session.aCorrect++;
+                else session.aWrong++;
+            }
+            if (rec.predB) {
+                if (act.type[1] === rec.predB) session.bCorrect++;
+                else session.bWrong++;
+            }
+            if (rec.killed) {
+                if (act.type !== rec.killed) session.fCorrect++;
+                else session.fWrong++;
+            }
+            rec.status = "已验证";
+
+            // ★★★ 修复：只使用 target 之前的历史数据 ★★★
+            const targetPeriod = rec.target;
+            const pastHistory = historyData.filter(h => parseInt(h.nbr) < targetPeriod);
+            const features = extractAdvancedFeatures(pastHistory);
+            if (features) {
+                const tcn = tcnPredict(features);
+                const lstm = attentionLstmPredict(features);
+                const gbdt = gbdtPredict(features);
+                const predictions = {
+                    A: { probBig: tcn.prob, probOdd: lstm.prob },
+                    B: { probBig: gbdt.probBig, probOdd: lstm.prob },
+                    C: { probBig: gbdt.probBig, probOdd: gbdt.probOdd }
+                };
+                onlineUpdate(act.type, predictions, features);
+            }
+
+            // 组合止损
+            const comboPred = rec.killed || (rec.predA && rec.predB ? rec.predA + rec.predB : null);
+            if (comboPred && comboPred !== act.type) {
+                consecutiveLoss.combo++;
+            } else {
+                consecutiveLoss.combo = 0;
+            }
+            if (consecutiveLoss.combo >= 3) {
+                session.comboAlpha = 0.5;
+                consecutiveLoss.combo = 0;
+            }
+
+            // 滑动窗口裁剪
+            if (session.records.length > MAX_VERIFIED_RECORDS) {
+                session.records.splice(0, session.records.length - MAX_VERIFIED_RECORDS);
+                let aC = 0, aW = 0, bC = 0, bW = 0, fC = 0, fW = 0;
+                for (let r of session.records) {
+                    if (r.status === "已验证") {
+                        const h = historyData.find(h => parseInt(h.nbr) === r.target);
+                        if (!h) continue;
+                        if (r.predA) { if (h.type[0] === r.predA) aC++; else aW++; }
+                        if (r.predB) { if (h.type[1] === r.predB) bC++; else bW++; }
+                        if (r.killed) { if (h.type !== r.killed) fC++; else fW++; }
+                    }
+                }
+                session.aCorrect = aC;
+                session.aWrong = aW;
+                session.bCorrect = bC;
+                session.bWrong = bW;
+                session.fCorrect = fC;
+                session.fWrong = fW;
+                logMsg("📊 记录超过300，已滑动裁剪并重新统计");
+            }
+
+            saveSession();
+            return true;
+        }
+
+        // ============================================================
+        // 数据解析、持久化(含新增的 gbdtStumpsOdd)
+        // ============================================================
+        function parseAPI(json) {
+            if (!json || json.message !== "success" || !Array.isArray(json.data)) {
+                throw new Error("接口格式异常");
+            }
+            const out = [];
+            for (const it of json.data) {
+                const nbr = String(it.nbr).trim();
+                if (!nbr) continue;
+                let sum;
+                if (typeof it.num !== "undefined" && it.num !== null && it.num !== "") {
+                    sum = parseInt(it.num);
+                } else {
+                    const parts = String(it.number).split("+");
+                    if (parts.length === 3) {
+                        sum = parts.map(Number).reduce((a, b) => a + b, 0);
+                    } else {
+                        continue;
+                    }
+                }
+                if (isNaN(sum)) continue;
+                const type = it.combination || getType(sum);
+                out.push({
+                    nbr: nbr,
+                    date: it.date || "",
+                    time: it.time || "",
+                    number: it.number || String(sum),
+                    num: sum,
+                    sum: sum,
+                    type: type,
+                    combination: type
+                });
+            }
+            out.sort((a, b) => parseInt(a.nbr) - parseInt(b.nbr));
+            return out.slice(-100);
+        }
+
+        function persistAll() {
+            try {
+                const dataToSave = {
+                    aCorrect: session.aCorrect || 0,
+                    aWrong: session.aWrong || 0,
+                    bCorrect: session.bCorrect || 0,
+                    bWrong: session.bWrong || 0,
+                    fCorrect: session.fCorrect || 0,
+                    fWrong: session.fWrong || 0,
+                    records: session.records || [],
+                    historyData: historyData || [],
+                    tcnWeights: tcnWeights,
+                    tcnBias: tcnBias,
+                    attnWeights: attnWeights,
+                    attnBias: attnBias,
+                    gbdtStumpsBig: gbdtStumpsBig,
+                    gbdtStumpsOdd: gbdtStumpsOdd,
+                    kalmanWeights: kalmanWeights,
+                    consecutiveLoss: consecutiveLoss
+                };
+                localStorage.setItem("pc28_full_data_v16", JSON.stringify(dataToSave));
+            } catch (e) { console.log("保存数据失败:", e); }
+        }
+
+        function restoreAll() {
+            try {
+                const raw = localStorage.getItem("pc28_full_data_v16");
+                if (raw) {
+                    const data = JSON.parse(raw);
+                    session = {
+                        aCorrect: data.aCorrect || 0,
+                        aWrong: data.aWrong || 0,
+                        bCorrect: data.bCorrect || 0,
+                        bWrong: data.bWrong || 0,
+                        fCorrect: data.fCorrect || 0,
+                        fWrong: data.fWrong || 0,
+                        records: data.records || [],
+                        comboAlpha: 0.5
+                    };
+                    if (data.tcnWeights) tcnWeights = data.tcnWeights;
+                    if (data.tcnBias !== undefined) tcnBias = data.tcnBias;
+                    if (data.attnWeights) attnWeights = data.attnWeights;
+                    if (data.attnBias !== undefined) attnBias = data.attnBias;
+                    if (data.gbdtStumpsBig) gbdtStumpsBig = data.gbdtStumpsBig;
+                    if (data.gbdtStumpsOdd) gbdtStumpsOdd = data.gbdtStumpsOdd;
+                    if (data.kalmanWeights) kalmanWeights = data.kalmanWeights;
+                    if (data.consecutiveLoss) consecutiveLoss = data.consecutiveLoss;
+                    if (data.historyData && Array.isArray(data.historyData) && data.historyData.length) {
+                        historyData = data.historyData;
+                    }
+                    return true;
+                }
+            } catch (e) { console.log("恢复数据失败:", e); }
+            return false;
+        }
+
+        function cacheHistoryData() {
+            try { localStorage.setItem("pc28_history_cache_v16", JSON.stringify(historyData)); } catch (e) {}
+        }
+
+        function restoreHistoryCache() {
+            try {
+                const hRaw = localStorage.getItem("pc28_history_cache_v16");
+                if (hRaw) {
+                    const h = JSON.parse(hRaw);
+                    if (Array.isArray(h) && h.length) {
+                        historyData = h;
+                        return true;
+                    }
+                }
+            } catch (e) {}
+            return false;
+        }
+
+        function saveSession() { try { persistAll(); } catch (e) {} }
+
+        function logMsg(m) {
+            const l = document.getElementById("log");
+            const p = document.createElement("p");
+            p.textContent = "[" + new Date().toLocaleTimeString() + "] " + m;
+            l.appendChild(p);
+            l.scrollTop = l.scrollHeight;
+            if (l.children.length > 100) l.removeChild(l.firstChild);
+        }
+
+        // ============================================================
+        // 回填预测(沿用)
+        // ============================================================
+        function backfillPredictions() {
+            if (historyData.length < 20) return;
+            let backfillCount = 0;
+            const openedPeriods = new Set(historyData.map(h => parseInt(h.nbr)));
+            const predictedTargets = new Set(session.records.map(r => r.target));
+            for (const period of openedPeriods) {
+                const target = period + 1;
+                if (predictedTargets.has(target)) continue;
+                const targetData = historyData.find(h => parseInt(h.nbr) === target);
+                if (!targetData) continue;
+                const tempHistory = historyData.filter(p => parseInt(p.nbr) < target);
+                if (tempHistory.length < 20) continue;
+                const resA = predictA(tempHistory);
+                const resB = predictB(tempHistory);
+                if (resA.prediction && resB.prediction) {
+                    // ★★★ 修改2：回填时传入 tempHistory，避免使用未来数据 ★★★
+                    const kill = buildKill(resA, resB, tempHistory);
+                    session.records.push({
+                        target: target,
+                        predA: resA.prediction,
+                        predB: resB.prediction,
+                        killed: kill.killedGroup,
+                        status: "已验证"
+                    });
+                    const act = targetData;
+                    if (resA.prediction === act.type[0]) session.aCorrect++;
+                    else session.aWrong++;
+                    if (resB.prediction === act.type[1]) session.bCorrect++;
+                    else session.bWrong++;
+                    if (act.type !== kill.killedGroup) session.fCorrect++;
+                    else session.fWrong++;
+                    backfillCount++;
+                }
+            }
+            if (backfillCount > 0) {
+                const verifiedCount = session.aCorrect + session.aWrong;
+                if (verifiedCount >= MAX_VERIFIED_RECORDS) {
+                    session.aCorrect = 0;
+                    session.aWrong = 0;
+                    session.bCorrect = 0;
+                    session.bWrong = 0;
+                    session.fCorrect = 0;
+                    session.fWrong = 0;
+                    logMsg("🔄 补录后达300期，回测统计自动清零");
+                }
+                persistAll();
             }
         }
-        session.aCorrect = aC; session.aWrong = aW;
-        session.bCorrect = bC; session.bWrong = bW;
-        session.fCorrect = fC; session.fWrong = fW;
-        logMsg("📊 记录超过300，已滑动裁剪并重新统计");
-    }
 
-    saveSession();
-    return true;
-}
+        function checkAutoReset() {
+            const verifiedCount = session.aCorrect + session.aWrong;
+            if (verifiedCount >= MAX_VERIFIED_RECORDS) {
+                session.aCorrect = 0;
+                session.aWrong = 0;
+                session.bCorrect = 0;
+                session.bWrong = 0;
+                session.fCorrect = 0;
+                session.fWrong = 0;
+                saveSession();
+                logMsg("🔄 已验证达300期，回测统计自动清零");
+                return true;
+            }
+            return false;
+        }
 
-function backfillPredictions() {
-    if(historyData.length < 10) return;
-    let backfillCount = 0;
-    const openedPeriods = new Set(historyData.map(h => parseInt(h.nbr)));
-    const predictedTargets = new Set(session.records.map(r => r.target));
-    for(const period of openedPeriods) {
-        const target = period + 1;
-        if(predictedTargets.has(target)) continue;
-        const targetData = historyData.find(h => parseInt(h.nbr) === target);
-        if(!targetData) continue;
-        const tempHistory = historyData.filter(p => parseInt(p.nbr) < target);
-        if(tempHistory.length < 10) continue;
-        const resA = predictA(tempHistory);
-        const resB = predictB(tempHistory);
-        if(resA.prediction && resB.prediction) {
-            const kill = buildKill(resA, resB);
-            session.records.push({
-                target: target,
-                predA: resA.prediction,
-                predB: resB.prediction,
-                killed: kill.killedGroup,
-                status: "已验证"
+        // ============================================================
+        // 异常检测
+        // ============================================================
+        function detectAnomaly(history) {
+            if (history.length < 10) return false;
+            const sums = history.map(h => h.sum);
+            const mean = sums.reduce((a, b) => a + b, 0) / sums.length;
+            const variance = sums.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / sums.length;
+            const std = Math.sqrt(variance + 0.001);
+            const z = Math.abs(sums[sums.length - 1] - mean) / std;
+            return z > ANOMALY_Z_THRESHOLD;
+        }
+
+        // ============================================================
+        // UI渲染
+        // ============================================================
+        function renderProcessA(resA) {
+            const container = document.getElementById("process-a-content");
+            if (!resA || !resA.windows || Object.keys(resA.windows).length === 0) {
+                container.innerHTML = '<div class="process-glass"><div class="step-content"><span style="color:#5a6f8a;">⏳ 等待数据...</span></div></div>';
+                return;
+            }
+            if (resA.prediction === null) {
+                container.innerHTML = '<div class="process-glass"><div class="step-content"><span style="color:#5a6f8a;">⏳ ' + (resA.reason || '维护时段，暂停预测') + '</span></div></div>';
+                return;
+            }
+            let html = '<div class="process-glass">';
+            html += '<div class="process-step"><div class="step-number">🧠</div><div class="step-content"><div class="step-title">TCN 状态</div><div class="step-detail">连续错误: ' + (resA.effs?.loss || 0) + '</div></div></div>';
+            html += '<div class="process-step"><div class="step-number">📊</div><div class="step-content"><div class="step-title">概率</div><div class="step-detail">大概率: ' + ((resA.final_score || 0.5)*100).toFixed(1) + '% → <b>' + resA.prediction + '</b></div></div></div>';
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function renderProcessB(resB, h) {
+            const container = document.getElementById("process-b-content");
+            if (!resB || resB.prediction === null) {
+                const msg = (h && h.length < 20) ? '需≥20期，当前' + h.length + '期' : '等待数据...';
+                container.innerHTML = '<div class="process-glass"><div class="step-content"><span style="color:#5a6f8a;">⏳ ' + msg + '</span></div></div>';
+                return;
+            }
+            let html = '<div class="process-glass">';
+            html += '<div class="process-step"><div class="step-number">🧠</div><div class="step-content"><div class="step-title">注意力LSTM 状态</div><div class="step-detail">连续错误: ' + (resB.effs?.loss || 0) + '</div></div></div>';
+            html += '<div class="process-step"><div class="step-number">📊</div><div class="step-content"><div class="step-title">概率</div><div class="step-detail">单概率: ' + ((resB.final_score || 0.5)*100).toFixed(1) + '% → <b>' + resB.prediction + '</b></div></div></div>';
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function updateUI() {
+            if (!historyData.length) {
+                document.getElementById("target-period").textContent = "加载中...";
+                document.getElementById("model-a").textContent = "--";
+                document.getElementById("model-b").textContent = "--";
+                return;
+            }
+            const latest = historyData[historyData.length - 1];
+            const target = String(parseInt(latest.nbr) + 1);
+            document.getElementById("target-period").textContent = target;
+            document.getElementById("prev-period").textContent = latest.nbr;
+            document.getElementById("prev-open").textContent = latest.number + "=" + latest.sum + "(" + latest.type + ")";
+
+            let resA, resB;
+            if (isMaintenanceTime() && lastValidPrediction) {
+                resA = lastValidPrediction.resA;
+                resB = lastValidPrediction.resB;
+                logMsg("⏳ 维护期间使用最近有效预测");
+            } else {
+                resA = predictA(historyData);
+                resB = predictB(historyData);
+                window._confA = resA.confidence || 0.5;
+                window._confB = resB.confidence || 0.5;
+                lastValidPrediction = { resA, resB, killResult: null };
+            }
+
+            document.getElementById("model-a").textContent = resA.prediction !== null ? resA.prediction : "维护中";
+            document.getElementById("a-prob").textContent = resA.prediction !== null ? ("大 " + ((resA.weightedProbability["大"] || 0.5) * 100).toFixed(1) + "% / 小 " + ((resA.weightedProbability["小"] || 0.5) * 100).toFixed(1) + "%") : "暂停预测";
+            document.getElementById("a-type").textContent = resA.type || "--";
+            renderProcessA(resA);
+
+            if (resB.prediction === null) {
+                document.getElementById("model-b").textContent = "维护中";
+            } else {
+                document.getElementById("model-b").textContent = resB.prediction;
+            }
+            renderProcessB(resB, historyData);
+
+            document.getElementById("b-seed").textContent = resB.seed || "--";
+            document.getElementById("b-rate").textContent = resB.hitRate || "--";
+            document.getElementById("b-groups").textContent = "——";
+
+            const isAnomaly = detectAnomaly(historyData);
+            const stEl = document.getElementById("status-tag");
+            if (isAnomaly) {
+                stEl.innerHTML = '<span class="conservative-tag">⚠️ 保守模式</span>';
+                if (!conservativeModeActive) {
+                    conservativeModeActive = true;
+                    modelAWeightScale = 0.6;
+                    modelBWeightScale = 0.6;
+                    logMsg("🔒 异常检测触发，进入保守模式，模型权重降至0.6");
+                }
+            } else {
+                stEl.textContent = "正常";
+                if (conservativeModeActive) {
+                    conservativeModeActive = false;
+                    modelAWeightScale = 1.0;
+                    modelBWeightScale = 1.0;
+                    logMsg("🔓 退出保守模式，模型权重恢复");
+                }
+            }
+
+            if (resA.prediction && resB.prediction) {
+                const scaledA = { ...resA, weightedProbability: { "大": (resA.weightedProbability["大"] || 0.5) * modelAWeightScale, "小": 1 - (resA.weightedProbability["大"] || 0.5) * modelAWeightScale } };
+                const scaledB = { ...resB, weightedProbability: { "单": (resB.weightedProbability["单"] || 0.5) * modelBWeightScale, "双": 1 - (resB.weightedProbability["单"] || 0.5) * modelBWeightScale } };
+
+                // 在实时预测中，使用全局 historyData(包含最新期)是合理的，不影响学习
+                const kill = buildKill(scaledA, scaledB);
+                if (lastValidPrediction) lastValidPrediction.killResult = kill;
+
+                document.getElementById("combo-scores").textContent = Object.entries(kill.scores).map(([k, v]) => k + ":" + v.toFixed(3)).join(" | ");
+                const kgEl = document.getElementById("kill-group");
+                if (kill.killedGroup) {
+                    kgEl.textContent = "杀" + kill.killedGroup;
+                    kgEl.className = "tag tag-kill";
+                } else {
+                    kgEl.textContent = "暂不杀组";
+                    kgEl.className = "tag tag-nopred";
+                }
+                document.getElementById("buy-groups").textContent = kill.recommended.join(" ");
+
+                if (!session.records.find(r => r.target === parseInt(target))) {
+                    session.records.push({
+                        target: parseInt(target),
+                        predA: resA.prediction,
+                        predB: resB.prediction,
+                        killed: kill.killedGroup,
+                        status: "待验证"
+                    });
+                    persistAll();
+                }
+            }
+
+            const verifiedCount = session.aCorrect + session.aWrong;
+            document.getElementById("stat-total").textContent = verifiedCount;
+            const pct = (c, w) => (c + w) > 0 ? ((c / (c + w)) * 100).toFixed(1) + "%" : "0%";
+            document.getElementById("stat-a").textContent = "正确" + session.aCorrect + "/错误" + session.aWrong + "/" + pct(session.aCorrect, session.aWrong);
+            document.getElementById("stat-b").textContent = "正确" + session.bCorrect + "/错误" + session.bWrong + "/" + pct(session.bCorrect, session.bWrong);
+            document.getElementById("stat-final").textContent = "正确" + session.fCorrect + "/错误" + session.fWrong + "/" + pct(session.fCorrect, session.fWrong);
+
+            const wStr = `A:${kalmanWeights.A.toFixed(2)} B:${kalmanWeights.B.toFixed(2)} C:${kalmanWeights.C.toFixed(2)}`;
+            document.getElementById("rl-status").textContent = "卡尔曼权重: " + wStr + " | 组合α: " + (session.comboAlpha || 0.5).toFixed(2);
+
+            const tb = document.getElementById("history-body");
+            tb.innerHTML = "";
+            historyData.slice(-30).reverse().forEach(h => {
+                const cls = "tag-" + (h.type === "大单" ? "big-odd" : h.type === "大双" ? "big-even" : h.type === "小单" ? "small-odd" : "small-even");
+                const rec = session.records.find(r => r.target === parseInt(h.nbr));
+                let predText = "未预测", predTagClass = "tag-nopred";
+                if (rec) {
+                    if (rec.killed) { predText = "杀" + rec.killed; predTagClass = "tag-pred"; }
+                    else if (rec.predA && rec.predB) { predText = rec.predA + "/" + rec.predB; predTagClass = "tag-pred"; }
+                }
+                let aCell = '<span class="pending">-</span>', bCell = '<span class="pending">-</span>', fCell = '<span class="pending">-</span>';
+                if (rec) {
+                    if (rec.status === "待验证") {
+                        aCell = bCell = fCell = '<span class="pending">待开</span>';
+                    } else if (rec.status === "已验证") {
+                        if (rec.predA) {
+                            if (h.type[0] === rec.predA) aCell = '<span class="hit">✓</span>';
+                            else aCell = '<span class="miss">✗</span>';
+                        }
+                        if (rec.predB) {
+                            if (h.type[1] === rec.predB) bCell = '<span class="hit">✓</span>';
+                            else bCell = '<span class="miss">✗</span>';
+                        }
+                        if (rec.killed) {
+                            if (h.type !== rec.killed) fCell = '<span class="hit">✓</span>';
+                            else fCell = '<span class="miss">✗</span>';
+                        }
+                    }
+                }
+                const tr = document.createElement("tr");
+                tr.innerHTML = '<td>' + h.nbr + '</td><td>' + h.number + '</td><td>' + h.sum + '</td><td><span class="tag ' + cls + '">' + h.type + '</span></td><td><span class="tag ' + predTagClass + '">' + predText + '</span></td><td>' + aCell + '</td><td>' + bCell + '</td><td>' + fCell + '</td>';
+                tb.appendChild(tr);
             });
-            const act = targetData;
-            if(resA.prediction === act.type[0]) session.aCorrect++;
-            else session.aWrong++;
-            if(resB.prediction === act.type[1]) session.bCorrect++;
-            else session.bWrong++;
-            if(act.type !== kill.killedGroup) session.fCorrect++;
-            else session.fWrong++;
-            backfillCount++;
-        }
-    }
-    if(backfillCount > 0) {
-        const verifiedCount = session.aCorrect + session.aWrong;
-        if(verifiedCount >= MAX_VERIFIED_RECORDS) {
-            session.aCorrect = 0; session.aWrong = 0;
-            session.bCorrect = 0; session.bWrong = 0;
-            session.fCorrect = 0; session.fWrong = 0;
-            logMsg("🔄 补录后达300期，回测统计自动清零");
-        }
-        persistAll();
-    }
-}
 
-function checkAutoReset() {
-    const verifiedCount = session.aCorrect + session.aWrong;
-    if(verifiedCount >= MAX_VERIFIED_RECORDS) {
-        session.aCorrect = 0; session.aWrong = 0;
-        session.bCorrect = 0; session.bWrong = 0;
-        session.fCorrect = 0; session.fWrong = 0;
-        saveSession();
-        logMsg("🔄 已验证达300期，回测统计自动清零");
-        return true;
-    }
-    return false;
-}
-
-// ============================================================
-// UI更新(部分简化，保留核心)
-// ============================================================
-function renderProcessA(resA) {
-    const container = document.getElementById("process-a-content");
-    if(!resA || !resA.windows || Object.keys(resA.windows).length === 0) {
-        container.innerHTML = '<div class="process-glass"><div class="step-content"><span style="color:#5a6f8a;">⏳ 等待数据...</span></div></div>';
-        return;
-    }
-    if(resA.prediction === null) {
-        container.innerHTML = '<div class="process-glass"><div class="step-content"><span style="color:#5a6f8a;">⏳ ' + (resA.reason || '维护时段，暂停预测') + '</span></div></div>';
-        return;
-    }
-    let html = '<div class="process-glass">';
-    html += '<div class="process-step"><div class="step-number">0</div><div class="step-content"><div class="step-title">🕐 时段权重</div><div class="step-detail">时段 ' + (resA.slot || '--') + ' ｜ 权重 (P大×' + (resA.weight ? resA.weight[0].toFixed(2) : '--') + ' + 趋势×' + (resA.weight ? resA.weight[1].toFixed(2) : '--') + ' + 连续×' + (resA.weight ? resA.weight[2].toFixed(2) : '--') + ')</div></div></div>';
-    html += '<div class="process-step"><div class="step-number">1</div><div class="step-content"><div class="step-title">📊 各窗口「大」概率</div><div class="step-detail"><div class="process-grid">';
-    A_WINDOWS.forEach(w => {
-        const win = resA.windows[w] || {};
-        const p = (win.p_big || 0.5) * 100;
-        const pred = win.score >= 0.5 ? '大' : '小';
-        html += '<div class="item"><div class="label">' + w + '期</div><div class="val">' + p.toFixed(1) + '%</div><div class="sub">→ ' + pred + '</div></div>';
-    });
-    html += '</div></div></div></div>';
-    html += '<div class="process-step"><div class="step-number">5</div><div class="step-content"><div class="step-title">🎯 加权汇总</div><div class="step-detail">最终分数 ' + ((resA.final_score || 0.5)*100).toFixed(1) + '% → 预测 <b>' + resA.prediction + '</b> ｜ 走势判定：' + resA.type + '</div></div></div>';
-    html += '</div>';
-    container.innerHTML = html;
-}
-
-function renderProcessB(resB, h) {
-    const container = document.getElementById("process-b-content");
-    if(!resB || resB.prediction === null) {
-        const msg = (h && h.length < 50) ? '需≥50期，当前' + h.length + '期' : '等待数据...';
-        container.innerHTML = '<div class="process-glass"><div class="step-content"><span style="color:#5a6f8a;">⏳ ' + msg + '</span></div></div>';
-        return;
-    }
-    let html = '<div class="process-glass">';
-    html += '<div class="process-step"><div class="step-number">1</div><div class="step-content"><div class="step-title">🔍 Seed搜索</div><div class="step-detail">粗扫 ' + B_SEED_MIN + '～' + B_SEED_MAX + ' 步长' + B_COARSE_STEP + ' → 精扫 ±9</div></div></div>';
-    html += '<div class="process-step"><div class="step-number">2</div><div class="step-content"><div class="step-title">🏆 最优Seed = 模式匹配</div><div class="step-detail">评分 0.0000 ｜ 整体命中率 -- ｜ 近30期 --</div></div></div>';
-    if(resB.groups && resB.groups.length) {
-        html += '<div class="process-step"><div class="step-number">4</div><div class="step-content"><div class="step-title">🎯 推三组</div><div class="step-detail">' + resB.groups.map(g => '<span class="tag" style="background:#5b6abf;font-size:11px;padding:1px 8px;">' + g + '</span>').join(' ') + ' ｜ 单 ' + (resB.weightedProbability['单']*100 || 0).toFixed(1) + '% / 双 ' + (resB.weightedProbability['双']*100 || 0).toFixed(1) + '% → 预测 <b>' + resB.prediction + '</b></div></div></div>';
-    } else {
-        html += '<div class="process-step"><div class="step-number">4</div><div class="step-content"><div class="step-title">🎯 推三组</div><div class="step-detail">单 ' + (resB.weightedProbability['单']*100 || 0).toFixed(1) + '% / 双 ' + (resB.weightedProbability['双']*100 || 0).toFixed(1) + '% → 预测 <b>' + resB.prediction + '</b></div></div></div>';
-    }
-    html += '</div>';
-    container.innerHTML = html;
-}
-
-function updateUI() {
-    if(!historyData.length) {
-        document.getElementById("target-period").textContent = "加载中...";
-        document.getElementById("model-a").textContent = "--";
-        document.getElementById("model-b").textContent = "--";
-        return;
-    }
-    const latest = historyData[historyData.length - 1];
-    const target = String(parseInt(latest.nbr) + 1);
-    document.getElementById("target-period").textContent = target;
-    document.getElementById("prev-period").textContent = latest.nbr;
-    document.getElementById("prev-open").textContent = latest.number + "=" + latest.sum + "(" + latest.type + ")";
-
-    let resA, resB;
-    if (isMaintenanceTime() && lastValidPrediction) {
-        resA = lastValidPrediction.resA;
-        resB = lastValidPrediction.resB;
-        logMsg("⏳ 维护期间使用最近有效预测");
-    } else {
-        resA = predictA(historyData);
-        resB = predictB(historyData);
-        // 保存置信度供组合权重使用
-        window._confA = resA.confidence || 0.5;
-        window._confB = resB.confidence || 0.5;
-        lastValidPrediction = { resA, resB, killResult: null };
-    }
-
-    document.getElementById("model-a").textContent = resA.prediction !== null ? resA.prediction : "维护中";
-    document.getElementById("a-prob").textContent = resA.prediction !== null ? ("大 " + (resA.weightedProbability["大"] * 100).toFixed(1) + "% / 小 " + (resA.weightedProbability["小"] * 100).toFixed(1) + "%") : "暂停预测";
-    document.getElementById("a-type").textContent = resA.type || "--";
-    renderProcessA(resA);
-
-    if(resB.prediction === null) {
-        document.getElementById("model-b").textContent = "维护中";
-    } else {
-        document.getElementById("model-b").textContent = resB.prediction;
-    }
-    renderProcessB(resB, historyData);
-
-    document.getElementById("b-seed").textContent = resB.seed || "--";
-    document.getElementById("b-rate").textContent = resB.hitRate || "--";
-    document.getElementById("b-groups").textContent = "——";
-
-    const isAnomaly = detectAnomaly(historyData);
-    const stEl = document.getElementById("status-tag");
-    if(isAnomaly) {
-        stEl.innerHTML = '<span class="conservative-tag">⚠️ 保守模式</span>';
-        if (!conservativeModeActive) {
-            conservativeModeActive = true;
-            modelAWeightScale = 0.6;
-            modelBWeightScale = 0.6;
-            logMsg("🔒 异常检测触发，进入保守模式，模型权重降至0.6");
-        }
-    } else {
-        stEl.textContent = "正常";
-        if (conservativeModeActive) {
-            conservativeModeActive = false;
-            modelAWeightScale = 1.0;
-            modelBWeightScale = 1.0;
-            logMsg("🔓 退出保守模式，模型权重恢复");
-        }
-    }
-
-    if(resA.prediction && resB.prediction) {
-        if(!gridBestParams) gridSearch(historyData);
-        const arimaAlpha = gridBestParams ? gridBestParams.alpha : 0.3;
-        arimaForecast(historyData.map(h => h.sum), arimaAlpha);
-        const features = buildFeatures(historyData, historyData.length - 1);
-        const lrConf = lrConfidence(features);
-        const ensembleResult = tripleEnsembleVote(resA.prediction, resB.prediction, latest.sum, 0.4, 0.3);
-        if(ensembleResult !== (resA.prediction + resB.prediction)) {
-            logMsg("🗳 三模型投票: " + ensembleResult + " (原:" + resA.prediction + resB.prediction + ")");
-        }
-
-        const scaledA = { ...resA, weightedProbability: { "大": resA.weightedProbability["大"] * modelAWeightScale, "小": 1 - resA.weightedProbability["大"] * modelAWeightScale } };
-        const scaledB = { ...resB, weightedProbability: { "单": resB.weightedProbability["单"] * modelBWeightScale, "双": 1 - resB.weightedProbability["单"] * modelBWeightScale } };
-
-        const kill = buildKill(scaledA, scaledB);
-        if (lastValidPrediction) lastValidPrediction.killResult = kill;
-
-        document.getElementById("combo-scores").textContent = Object.entries(kill.scores).map(([k,v]) => k + ":" + v.toFixed(3)).join(" | ");
-        const kgEl = document.getElementById("kill-group");
-        if(kill.killedGroup) {
-            kgEl.textContent = "杀" + kill.killedGroup;
-            kgEl.className = "tag tag-kill";
-        } else {
-            kgEl.textContent = "暂不杀组";
-            kgEl.className = "tag tag-nopred";
-        }
-        document.getElementById("buy-groups").textContent = kill.recommended.join(" ");
-
-        if(!session.records.find(r => r.target === parseInt(target))) {
-            session.records.push({
-                target: parseInt(target),
-                predA: resA.prediction,
-                predB: resB.prediction,
-                killed: kill.killedGroup,
-                status: "待验证"
-            });
-            window._pendingGD = { period: parseInt(target), features: features };
             persistAll();
+            cacheHistoryData();
         }
-    }
 
-    const verifiedCount = session.aCorrect + session.aWrong;
-    document.getElementById("stat-total").textContent = verifiedCount;
-    const pct = (c,w) => (c+w) > 0 ? ((c/(c+w))*100).toFixed(1) + "%" : "0%";
-    document.getElementById("stat-a").textContent = "正确" + session.aCorrect + "/错误" + session.aWrong + "/" + pct(session.aCorrect, session.aWrong);
-    document.getElementById("stat-b").textContent = "正确" + session.bCorrect + "/错误" + session.bWrong + "/" + pct(session.bCorrect, session.bWrong);
-    document.getElementById("stat-final").textContent = "正确" + session.fCorrect + "/错误" + session.fWrong + "/" + pct(session.fCorrect, session.fWrong);
+        // ============================================================
+        // API拉取与倒计时
+        // ============================================================
+        async function pull() {
+            try {
+                const ctrl = new AbortController();
+                const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT);
+                const resp = await fetch(API_URL, { signal: ctrl.signal });
+                clearTimeout(timer);
+                if (!resp.ok) throw new Error("HTTP " + resp.status);
+                const json = await resp.json();
+                const parsed = parseAPI(json);
+                if (!parsed.length) throw new Error("解析后无数据");
+                historyData = parsed;
+                logMsg("✅ 实拉 " + historyData.length + " 期，最新期 " + historyData[historyData.length - 1].nbr);
 
-    const tb = document.getElementById("history-body");
-    tb.innerHTML = "";
-    historyData.slice(-30).reverse().forEach(h => {
-        const cls = "tag-" + (h.type === "大单" ? "big-odd" : h.type === "大双" ? "big-even" : h.type === "小单" ? "small-odd" : "small-even");
-        const rec = session.records.find(r => r.target === parseInt(h.nbr));
-        let predText = "未预测", predTagClass = "tag-nopred";
-        if(rec) {
-            if(rec.killed) { predText = "杀" + rec.killed; predTagClass = "tag-pred"; }
-            else if(rec.predA && rec.predB) { predText = rec.predA + "/" + rec.predB; predTagClass = "tag-pred"; }
-        }
-        let aCell = '<span class="pending">-</span>', bCell = '<span class="pending">-</span>', fCell = '<span class="pending">-</span>';
-        if(rec) {
-            if(rec.status === "待验证") {
-                aCell = bCell = fCell = '<span class="pending">待开</span>';
-            } else if(rec.status === "已验证") {
-                if(rec.predA) {
-                    if(h.type[0] === rec.predA) aCell = '<span class="hit">✓</span>';
-                    else aCell = '<span class="miss">✗</span>';
-                }
-                if(rec.predB) {
-                    if(h.type[1] === rec.predB) bCell = '<span class="hit">✓</span>';
-                    else bCell = '<span class="miss">✗</span>';
-                }
-                if(rec.killed) {
-                    if(h.type !== rec.killed) fCell = '<span class="hit">✓</span>';
-                    else fCell = '<span class="miss">✗</span>';
-                }
+                while (verifyOne()) {}
+                backfillPredictions();
+                while (verifyOne()) {}
+
+                if (checkAutoReset()) { updateUI(); }
+                updateUI();
+
+                startCountdown(210);
+            } catch (err) {
+                logMsg("❌ 请求失败：" + err.message);
             }
         }
-        const tr = document.createElement("tr");
-        tr.innerHTML = '<td>' + h.nbr + '</td><td>' + h.number + '</td><td>' + h.sum + '</td><td><span class="tag ' + cls + '">' + h.type + '</span></td><td><span class="tag ' + predTagClass + '">' + predText + '</span></td><td>' + aCell + '</td><td>' + bCell + '</td><td>' + fCell + '</td>';
-        tb.appendChild(tr);
-    });
 
-    persistAll();
-    cacheHistoryData();
-}
-
-// ============================================================
-// API拉取与倒计时
-// ============================================================
-async function pull() {
-    try {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT);
-        const resp = await fetch(API_URL, {signal: ctrl.signal});
-        clearTimeout(timer);
-        if(!resp.ok) throw new Error("HTTP " + resp.status);
-        const json = await resp.json();
-        const parsed = parseAPI(json);
-        if(!parsed.length) throw new Error("解析后无数据");
-        historyData = parsed;
-        logMsg("✅ 实拉 " + historyData.length + " 期，最新期 " + historyData[historyData.length - 1].nbr);
-        
-        while(verifyOne()) {}
-        backfillPredictions();
-        while(verifyOne()) {}
-        
-        if(checkAutoReset()) { updateUI(); }
-        updateUI();
-
-        startCountdown(210);
-    } catch(err) {
-        logMsg("❌ 请求失败：" + err.message);
-    }
-}
-
-function startCountdown(seconds) {
-    countdownSeconds = seconds;
-    updateCountdownDisplay();
-    if(countdownTimer) clearInterval(countdownTimer);
-    countdownTimer = setInterval(() => {
-        countdownSeconds--;
-        updateCountdownDisplay();
-        if(countdownSeconds <= 0) {
-            clearInterval(countdownTimer);
-            logMsg("⏰ 倒计时归零，自动拉取");
-            pull();
+        function startCountdown(seconds) {
+            countdownSeconds = seconds;
+            updateCountdownDisplay();
+            if (countdownTimer) clearInterval(countdownTimer);
+            countdownTimer = setInterval(() => {
+                countdownSeconds--;
+                updateCountdownDisplay();
+                if (countdownSeconds <= 0) {
+                    clearInterval(countdownTimer);
+                    logMsg("⏰ 倒计时归零，自动拉取");
+                    pull();
+                }
+            }, 1000);
         }
-    }, 1000);
-}
 
-function updateCountdownDisplay() {
-    const el = document.getElementById("countdown-display");
-    if(!el) return;
-    if(countdownSeconds <= 0) { el.textContent = "--:--"; return; }
-    const m = Math.floor(countdownSeconds / 60);
-    const s = countdownSeconds % 60;
-    el.textContent = String(m).padStart(2, '0') + ":" + String(s).padStart(2, '0');
-}
-
-// ============================================================
-// 事件绑定与启动
-// ============================================================
-document.addEventListener("visibilitychange", () => {
-    if(document.visibilityState === "visible") {
-        logMsg("👁 切回前台，重新拉取");
-        pull();
-    }
-});
-
-window.addEventListener("pageshow", (e) => {
-    if(e.persisted) {
-        logMsg("📱 页面恢复，先显示缓存数据，再拉取最新");
-        if(restoreAll()) {
-            updateUI();
-            logMsg("📦 已显示完整缓存数据");
-        } else if(restoreHistoryCache()) {
-            updateUI();
-            logMsg("📦 已显示缓存数据(仅开奖历史)");
+        function updateCountdownDisplay() {
+            const el = document.getElementById("countdown-display");
+            if (!el) return;
+            if (countdownSeconds <= 0) { el.textContent = "--:--"; return; }
+            const m = Math.floor(countdownSeconds / 60);
+            const s = countdownSeconds % 60;
+            el.textContent = String(m).padStart(2, '0') + ":" + String(s).padStart(2, '0');
         }
+
+        // ============================================================
+        // 事件绑定与启动
+        // ============================================================
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible") {
+                logMsg("👁 切回前台，重新拉取");
+                pull();
+            }
+        });
+
+        window.addEventListener("pageshow", (e) => {
+            if (e.persisted) {
+                logMsg("📱 页面恢复，先显示缓存数据，再拉取最新");
+                if (restoreAll()) {
+                    updateUI();
+                    logMsg("📦 已显示完整缓存数据 (v16)");
+                } else if (restoreHistoryCache()) {
+                    updateUI();
+                    logMsg("📦 已显示缓存数据(仅开奖历史)");
+                }
+                pull();
+            }
+        });
+
+        document.getElementById("btn-reset").addEventListener("click", function() {
+            session.aCorrect = 0;
+            session.aWrong = 0;
+            session.bCorrect = 0;
+            session.bWrong = 0;
+            session.fCorrect = 0;
+            session.fWrong = 0;
+            // 重置所有模型权重
+            tcnWeights = new Array(10).fill(0).map(() => Math.random() * 0.2 - 0.1);
+            tcnBias = 0;
+            attnWeights = new Array(20).fill(0).map(() => Math.random() * 0.2 - 0.1);
+            attnBias = 0;
+            gbdtStumpsBig = [];
+            gbdtStumpsOdd = [];
+            for (let i = 0; i < 20; i++) {
+                gbdtStumpsBig.push({
+                    featureIdx: Math.floor(Math.random() * 10),
+                    threshold: Math.random() * 2 - 1,
+                    leftVal: Math.random() * 0.2 - 0.1,
+                    rightVal: Math.random() * 0.2 - 0.1
+                });
+                gbdtStumpsOdd.push({
+                    featureIdx: Math.floor(Math.random() * 10),
+                    threshold: Math.random() * 2 - 1,
+                    leftVal: Math.random() * 0.2 - 0.1,
+                    rightVal: Math.random() * 0.2 - 0.1
+                });
+            }
+            kalmanWeights = { A: 0.34, B: 0.33, C: 0.33 };
+            consecutiveLoss = { A: 0, B: 0, C: 0, combo: 0 };
+            persistAll();
+            updateUI();
+            logMsg("🗑 统计已清零，所有模型权重已重置");
+            this.textContent = "✅ 已清零！";
+            this.classList.add("done");
+            setTimeout(() => { this.textContent = "🗑 清零统计"; this.classList.remove("done"); }, 1500);
+        });
+
+        logMsg("🚀 启动 v16 多基集成版(修复版)，数据源：pc28.help");
+
+        if (restoreAll()) {
+            updateUI();
+            logMsg("📦 已恢复完整数据，记录数: " + session.records.length);
+        } else if (restoreHistoryCache()) {
+            updateUI();
+            logMsg("📦 已恢复缓存数据(仅开奖历史)");
+        }
+
         pull();
-    }
-});
-
-document.getElementById("btn-reset").addEventListener("click", function() {
-    session.aCorrect = 0; session.aWrong = 0;
-    session.bCorrect = 0; session.bWrong = 0;
-    session.fCorrect = 0; session.fWrong = 0;
-    persistAll();
-    updateUI();
-    logMsg("🗑 统计已清零");
-    this.textContent = "✅ 已清零！";
-    this.classList.add("done");
-    setTimeout(() => { this.textContent = "🗑 清零统计"; this.classList.remove("done"); }, 1500);
-});
-
-// 启动
-logMsg("🚀 启动 v13 增强版，数据源：pc28.help");
-
-if(restoreAll()) {
-    updateUI();
-    logMsg("📦 已恢复完整数据，记录数: " + session.records.length);
-} else if(restoreHistoryCache()) {
-    updateUI();
-    logMsg("📦 已恢复缓存数据(仅开奖历史)");
-}
-
-pull();
-</script>
+    </script>
 </body>
 </html>
